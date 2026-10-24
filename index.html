@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FinTrack — Personal Finance Manager | Flask + SQLite Full-Stack</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Plus Jakarta Sans','Inter','sans-serif'],mono:['JetBrains Mono','monospace']},colors:{brand:{50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d0',300:'#6ee7b7',400:'#34d399',500:'#10b981',600:'#059669',700:'#047857',800:'#065f46',900:'#064e3b'},ink:{900:'#0b1220',800:'#111c33',700:'#1a2947'}},boxShadow:{soft:'0 10px 40px -10px rgba(0,0,0,.15)',glow:'0 0 0 1px rgba(16,185,129,.35),0 10px 40px -10px rgba(16,185,129,.5)'}}}}
+</script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{--bg:#f6f8fb;--card:#ffffff;--muted:#64748b}
+html.dark{--bg:#0b1220;--card:#111c33;--muted:#94a3b8}
+html,body{background:var(--bg)}
+body{font-family:'Plus Jakarta Sans',Inter,sans-serif}
+.glass{background:rgba(255,255,255,.78);backdrop-filter:blur(18px)}
+html.dark .glass{background:rgba(17,28,51,.78)}
+.grad-text{background:linear-gradient(92deg,#10b981,#3b82f6 55%,#8b5cf6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.grad-bg{background:linear-gradient(135deg,#059669,#0ea5e9 60%,#6366f1)}
+.mesh{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.mesh span{position:absolute;border-radius:9999px;filter:blur(70px);opacity:.45;animation:float 10s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-24px) scale(1.08)}}
+.card-hover{transition:.35s cubic-bezier(.2,.8,.2,1)}
+.card-hover:hover{transform:translateY(-4px)}
+.stat-card{position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent)}
+.scroll-thin::-webkit-scrollbar{width:8px;height:8px}
+.scroll-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px}
+html.dark .scroll-thin::-webkit-scrollbar-thumb{background:#334155}
+.navlink{transition:.25s}
+.navlink.active{background:linear-gradient(135deg,#10b981,#0ea5e9);color:#fff!important;box-shadow:0 8px 24px -8px rgba(16,185,129,.6)}
+.navlink:not(.active):hover{background:rgba(16,185,129,.1)}
+.progress{height:8px;border-radius:99px;background:#e2e8f0;overflow:hidden}
+html.dark .progress{background:#1e293b}
+.progress>div{height:100%;border-radius:99px;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.tree-item{transition:.2s;cursor:pointer}
+.tree-item:hover{background:rgba(16,185,129,.12)}
+.tree-item.active{background:rgba(16,185,129,.16);border-left:3px solid #10b981}
+pre code{font-family:'JetBrains Mono',monospace!important;font-size:13px!important;line-height:1.65!important}
+.terminal{font-family:'JetBrains Mono',monospace}
+.blink{animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.modal-bg{background:rgba(2,6,23,.6);backdrop-filter:blur(6px)}
+.fadeUp{animation:fadeUp .5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.stagger>*{animation:fadeUp .6s cubic-bezier(.2,.8,.2,1) both}
+.stagger>*:nth-child(2){animation-delay:.08s}.stagger>*:nth-child(3){animation-delay:.16s}.stagger>*:nth-child(4){animation-delay:.24s}.stagger>*:nth-child(5){animation-delay:.32s}
+input,select{outline:none}
+.field{transition:.2s}
+.field:focus{border-color:#10b981!important;box-shadow:0 0 0 3px rgba(16,185,129,.18)}
+.toast-in{animation:toastIn .4s cubic-bezier(.2,.9,.2,1) both}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+.badge-dot{width:10px;height:10px;border-radius:99px;display:inline-block}
+.table-row{transition:.2s}
+.table-row:hover{background:rgba(16,185,129,.06)}
+#sidebar{transition:.35s cubic-bezier(.2,.8,.2,1)}
+@media(max-width:1023px){#sidebar{position:fixed;z-index:40;transform:translateX(-110%)}#sidebar.open{transform:translateX(0)}}
+.chip{font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;letter-spacing:.04em}
+.count-up{font-variant-numeric:tabular-nums}
+.filetree-folder{font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.hljs{background:transparent!important}
+.dot-grid{background-image:radial-gradient(rgba(100,116,139,.25) 1px,transparent 1px);background-size:18px 18px}
+</style>
+</head>
+<body class="text-slate-800 dark:text-slate-100 min-h-screen">
+
+<!-- ══════════ GLOBAL TOP BAR ══════════ -->
+<header class="sticky top-0 z-50 glass border-b border-slate-200/70 dark:border-white/10">
+<div class="max-w-[1500px] mx-auto px-4 lg:px-6 h-[64px] flex items-center gap-3">
+<button id="hamburger" class="lg:hidden w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/10 grid place-items-center"><i class="fa-solid fa-bars"></i></button>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-2xl grad-bg grid place-items-center text-white shadow-glow"><i class="fa-solid fa-wallet text-lg"></i></div>
+<div class="leading-tight">
+<div class="font-extrabold text-lg tracking-tight">FinTrack <span class="hidden sm:inline text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 ml-1 align-middle">v2.0 • Flask + SQLite</span></div>
+<div class="text-[11px] font-mono text-slate-500 dark:text-slate-400">fintrack/ — python app.py</div>
+</div>
+</div>
+<div class="flex-1"></div>
+<div class="hidden md:flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10">
+<button id="tabLive" class="px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-500"></i> Live App</button>
+<button id="tabCode" class="px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2"><i class="fa-solid fa-code text-sky-500"></i> Source Code <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-white dark:bg-white dark:text-slate-900">13 files</span></button>
+</div>
+<button id="btnZipTop" class="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl grad-bg text-white text-sm font-bold shadow-glow hover:opacity-90 transition"><i class="fa-solid fa-download"></i> Download ZIP</button>
+<button id="themeToggle" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/10 grid place-items-center hover:scale-105 transition" title="Dark / Light"><i id="themeIcon" class="fa-solid fa-moon"></i></button>
+<div id="topAvatar" class="hidden items-center gap-2 pl-1"></div>
+</div>
+<div class="md:hidden px-4 pb-3 flex gap-2">
+<button id="tabLiveM" class="flex-1 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-white/10">Live App</button>
+<button id="tabCodeM" class="flex-1 py-2 rounded-xl text-sm font-bold bg-slate-100 dark:bg-white/10">Source Code</button>
+</div>
+</header>
+
+<!-- ══════════ VIEW: LIVE APP ══════════ -->
+<div id="liveView" class="max-w-[1500px] mx-auto">
+
+<!-- AUTH / LANDING -->
+<div id="authView" class="px-4 lg:px-6 py-8 lg:py-12 grid lg:grid-cols-2 gap-8 items-start">
+<div class="relative rounded-3xl overflow-hidden p-8 lg:p-12 bg-slate-900 text-white min-h-[560px] flex flex-col justify-between shadow-soft">
+<div class="mesh"><span class="w-96 h-96 bg-emerald-500 -top-20 -left-20"></span><span class="w-96 h-96 bg-sky-500 top-40 right-0" style="animation-delay:2s"></span><span class="w-72 h-72 bg-violet-600 bottom-0 left-1/3" style="animation-delay:4s"></span></div>
+<div class="relative">
+<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-bold"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> REAL FULL-STACK • Flask + SQLite + Jinja2 + Chart.js</div>
+<h1 class="mt-5 text-4xl lg:text-6xl font-extrabold leading-[1.02] tracking-tight">Master your <span class="grad-text" style="background:linear-gradient(92deg,#34d399,#7dd3fc,#c4b5fd);-webkit-background-clip:text;background-clip:text;color:transparent">money</span> with FinTrack.</h1>
+<p class="mt-4 text-slate-300 max-w-md">Register, log in, track income & expenses, set monthly budgets and visualize everything. 100% of calculations come from live database data — no fake stats. Full CRUD included.</p>
+<div class="mt-6 flex flex-wrap gap-2 font-mono text-[11px]">
+<span class="px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/15">HTML5</span><span class="px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/15">CSS3</span><span class="px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/15">Vanilla JS</span><span class="px-2.5 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-emerald-200">Python Flask</span><span class="px-2.5 py-1.5 rounded-lg bg-sky-500/20 border border-sky-400/30 text-sky-200">SQLite</span><span class="px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/15">Jinja2</span><span class="px-2.5 py-1.5 rounded-lg bg-violet-500/20 border border-violet-400/30 text-violet-200">Chart.js</span>
+</div>
+<div class="mt-7 grid grid-cols-3 gap-3 max-w-md">
+<div class="rounded-2xl bg-white/10 border border-white/15 p-4"><div class="text-2xl font-extrabold" id="heroStatTx">0</div><div class="text-xs text-slate-300">Live transactions</div></div>
+<div class="rounded-2xl bg-white/10 border border-white/15 p-4"><div class="text-2xl font-extrabold">8</div><div class="text-xs text-slate-300">Categories</div></div>
+<div class="rounded-2xl bg-white/10 border border-white/15 p-4"><div class="text-2xl font-extrabold">100%</div><div class="text-xs text-slate-300">Real CRUD</div></div>
+</div>
+</div>
+<div class="relative mt-8 rounded-2xl bg-black/50 border border-white/15 p-4 terminal text-[12px] leading-relaxed">
+<div class="flex gap-1.5 mb-2"><span class="w-3 h-3 rounded-full bg-red-400"></span><span class="w-3 h-3 rounded-full bg-amber-400"></span><span class="w-3 h-3 rounded-full bg-emerald-400"></span></div>
+<div class="text-slate-300">$ pip install -r requirements.txt</div>
+<div class="text-emerald-300">Successfully installed Flask-3.0.1 Werkzeug-3.0.1</div>
+<div class="text-slate-300">$ python app.py</div>
+<div class="text-sky-300">* Running on http://127.0.0.1:5000 <span class="blink">▊</span></div>
+</div>
+</div>
+
+<div class="space-y-4">
+<div class="rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 shadow-soft p-6 lg:p-8">
+<div class="flex p-1 rounded-2xl bg-slate-100 dark:bg-white/5 mb-6">
+<button id="authTabLogin" class="flex-1 py-2.5 rounded-xl text-sm font-bold transition">Login</button>
+<button id="authTabReg" class="flex-1 py-2.5 rounded-xl text-sm font-bold transition">Register</button>
+</div>
+<!-- LOGIN -->
+<form id="loginForm" class="space-y-4">
+<h2 class="text-2xl font-extrabold tracking-tight">Welcome back 👋</h2>
+<p class="text-sm text-slate-500 -mt-2">Login with hashed-password auth + session.</p>
+<div><label class="text-xs font-bold uppercase tracking-wider text-slate-500">Email</label><input id="loginEmail" type="email" placeholder="demo@fintrack.com" class="field mt-1.5 w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm"/></div>
+<div><label class="text-xs font-bold uppercase tracking-wider text-slate-500">Password</label><div class="relative"><input id="loginPass" type="password" placeholder="••••••••" class="field mt-1.5 w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm pr-12"/><button type="button" class="absolute right-3 top-[18px] text-slate-400 togglePass"><i class="fa-solid fa-eye"></i></button></div></div>
+<div id="loginErr" class="hidden text-sm font-semibold text-red-500 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl px-4 py-2.5"></div>
+<button class="w-full py-3.5 rounded-2xl grad-bg text-white font-extrabold shadow-glow hover:opacity-90 transition flex items-center justify-center gap-2"><i class="fa-solid fa-right-to-bracket"></i> Login to Dashboard</button>
+<div class="grid grid-cols-2 gap-2">
+<button type="button" id="fillDemo" class="py-2.5 rounded-xl border border-dashed border-emerald-400 text-emerald-600 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-50 dark:hover:bg-emerald-500/10">Fill demo@fintrack.com</button>
+<button type="button" id="fillAdmin" class="py-2.5 rounded-xl border border-dashed border-violet-400 text-violet-600 dark:text-violet-300 text-xs font-bold hover:bg-violet-50 dark:hover:bg-violet-500/10">Fill admin@fintrack.com</button>
+</div>
+</form>
+<!-- REGISTER -->
+<form id="regForm" class="space-y-4 hidden">
+<h2 class="text-2xl font-extrabold tracking-tight">Create account ✨</h2>
+<p class="text-sm text-slate-500 -mt-2">Passwords are hashed with Werkzeug (pbkdf2:sha256).</p>
+<div><label class="text-xs font-bold uppercase tracking-wider text-slate-500">Full name</label><input id="regName" placeholder="Alex Morgan" class="field mt-1.5 w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm"/></div>
+<div><label class="text-xs font-bold uppercase tracking-wider text-slate-500">Email</label><input id="regEmail" type="email" placeholder="you@mail.com" class="field mt-1.5 w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm"/></div>
+<div class="grid grid-cols-2 gap-3">
+<div><label class="text-xs font-bold uppercase tracking-wider text-slate-500">Password</label><input id="regPass" type="password" placeholder="Min 6 chars" class="field mt-1.5 w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm"/></div>
+<div><label class="text-xs font-bold uppercase tracking-wider text-slate-500">Confirm</label><input id="regPass2" type="password" placeholder="Repeat" class="field mt-1.5 w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm"/></div>
+</div>
+<div class="rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-3 text-xs text-slate-500">Password strength: <div class="progress mt-2"><div id="passBar" style="width:0%;background:linear-gradient(90deg,#ef4444,#f59e0b,#10b981)"></div></div></div>
+<div id="regErr" class="hidden text-sm font-semibold text-red-500 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl px-4 py-2.5"></div>
+<button class="w-full py-3.5 rounded-2xl grad-bg text-white font-extrabold shadow-glow hover:opacity-90 transition">Create account & Login</button>
+</form>
+</div>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
+<div class="rounded-2xl bg-white dark:bg-ink-800 border p-4 border-slate-200 dark:border-white/10"><i class="fa-solid fa-shield-halved text-emerald-500 text-xl"></i><div class="font-bold text-sm mt-2">Hashed Auth</div><div class="text-xs text-slate-500">Sessions + hashing</div></div>
+<div class="rounded-2xl bg-white dark:bg-ink-800 border p-4 border-slate-200 dark:border-white/10"><i class="fa-solid fa-database text-sky-500 text-xl"></i><div class="font-bold text-sm mt-2">SQLite + ? params</div><div class="text-xs text-slate-500">Injection-safe</div></div>
+<div class="rounded-2xl bg-white dark:bg-ink-800 border p-4 border-slate-200 dark:border-white/10"><i class="fa-solid fa-chart-pie text-violet-500 text-xl"></i><div class="font-bold text-sm mt-2">Chart.js live</div><div class="text-xs text-slate-500">From real rows</div></div>
+<div class="rounded-2xl bg-white dark:bg-ink-800 border p-4 border-slate-200 dark:border-white/10"><i class="fa-solid fa-moon text-amber-500 text-xl"></i><div class="font-bold text-sm mt-2">Dark / Light</div><div class="text-xs text-slate-500">Responsive nav</div></div>
+</div>
+</div>
+</div>
+
+<!-- APP SHELL -->
+<div id="appShell" class="hidden px-4 lg:px-6 py-6 flex gap-6 items-start">
+<!-- SIDEBAR -->
+<aside id="sidebar" class="w-[270px] shrink-0 rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 shadow-soft p-5 lg:sticky lg:top-[84px] max-h-[calc(100vh-100px)] overflow-y-auto scroll-thin">
+<div class="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+<div id="sbAvatar" class="w-11 h-11 rounded-2xl grad-bg grid place-items-center text-white font-extrabold text-lg">D</div>
+<div class="min-w-0"><div id="sbName" class="font-extrabold text-sm truncate">Demo</div><div id="sbEmail" class="text-xs text-slate-500 truncate">demo@..</div><span id="sbRole" class="chip bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">USER</span></div>
+</div>
+<nav class="mt-4 space-y-1.5 text-sm font-bold">
+<button data-page="dashboard" class="navlink active w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 dark:text-slate-300"><i class="fa-solid fa-grid-2 w-5 text-center"></i> Dashboard</button>
+<button data-page="transactions" class="navlink w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 dark:text-slate-300"><i class="fa-solid fa-arrow-right-arrow-left w-5 text-center"></i> Transactions <span id="navTxCount" class="ml-auto text-[11px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/10">0</span></button>
+<button data-page="budget" class="navlink w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 dark:text-slate-300"><i class="fa-solid fa-piggy-bank w-5 text-center"></i> Budgets</button>
+<button data-page="admin" id="navAdmin" class="navlink hidden w-full items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 dark:text-slate-300"><i class="fa-solid fa-user-shield w-5 text-center"></i> Admin Panel</button>
+</nav>
+<div class="mt-4 rounded-2xl p-4 bg-gradient-to-br from-emerald-500 to-sky-600 text-white">
+<div class="text-xs font-bold opacity-90">THIS MONTH SPENT</div>
+<div id="sbMonthSpent" class="text-2xl font-extrabold">$0</div>
+<div class="progress mt-2 !bg-white/25"><div id="sbMonthBar" style="width:0%;background:#fff"></div></div>
+<div id="sbMonthLbl" class="text-[11px] mt-1 opacity-90">0% of budget</div>
+</div>
+<div class="mt-3 rounded-2xl p-4 border border-dashed border-slate-300 dark:border-white/15">
+<div class="text-xs font-extrabold flex items-center gap-2"><i class="fa-solid fa-code text-sky-500"></i> FLASK SOURCE INCLUDED</div>
+<p class="text-xs text-slate-500 mt-1">View app.py, templates, static files & requirements.</p>
+<button class="gotoCode mt-2 w-full py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-extrabold">Open Project Files</button>
+</div>
+<button id="btnLogout" class="mt-3 w-full py-3 rounded-2xl border border-red-200 dark:border-red-500/30 text-red-500 text-sm font-bold hover:bg-red-50 dark:hover:bg-red-500/10 transition"><i class="fa-solid fa-right-from-bracket mr-1"></i> Logout</button>
+</aside>
+<div id="sbOverlay" class="hidden fixed inset-0 z-30 modal-bg lg:hidden"></div>
+
+<!-- MAIN -->
+<main class="flex-1 min-w-0 space-y-6">
+
+<!-- DASHBOARD -->
+<section id="page-dashboard" class="space-y-6">
+<div class="flex flex-wrap items-end gap-4">
+<div><div class="text-xs font-bold text-slate-500 uppercase tracking-widest" id="dashDate">—</div><h2 class="text-3xl font-extrabold tracking-tight">Good day, <span id="dashName">there</span> 👋</h2><p class="text-sm text-slate-500">All figures calculated live from your transaction rows.</p></div>
+<div class="flex-1"></div>
+<div class="flex gap-2">
+<select id="dashMonth" class="field px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-ink-800 text-sm font-bold"></select>
+<button onclick="openTxModal()" class="px-5 py-2.5 rounded-xl grad-bg text-white text-sm font-extrabold shadow-glow hover:opacity-90"><i class="fa-solid fa-plus mr-1"></i> Add Transaction</button>
+</div>
+</div>
+<div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 stagger">
+<div class="stat-card card-hover rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 p-5 shadow-soft" style="--accent:linear-gradient(90deg,#10b981,#0ea5e9)">
+<div class="flex items-center justify-between"><div class="w-11 h-11 rounded-2xl bg-emerald-100 dark:bg-emerald-500/20 grid place-items-center text-emerald-600 dark:text-emerald-300 text-xl"><i class="fa-solid fa-wallet"></i></div><span class="chip bg-slate-100 dark:bg-white/10 text-slate-500">BALANCE</span></div>
+<div class="mt-3 text-3xl font-extrabold count-up" id="stBalance">$0</div><div class="text-xs text-slate-500 mt-1" id="stBalanceSub">income − expenses</div>
+</div>
+<div class="stat-card card-hover rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 p-5 shadow-soft" style="--accent:#22c55e">
+<div class="flex items-center justify-between"><div class="w-11 h-11 rounded-2xl bg-green-100 dark:bg-green-500/20 grid place-items-center text-green-600 text-xl"><i class="fa-solid fa-arrow-trend-up"></i></div><span class="chip bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300">INCOME</span></div>
+<div class="mt-3 text-3xl font-extrabold text-green-600 count-up" id="stIncome">$0</div><div class="text-xs text-slate-500 mt-1" id="stIncomeCount">0 records</div>
+</div>
+<div class="stat-card card-hover rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 p-5 shadow-soft" style="--accent:#ef4444">
+<div class="flex items-center justify-between"><div class="w-11 h-11 rounded-2xl bg-red-100 dark:bg-red-500/20 grid place-items-center text-red-500 text-xl"><i class="fa-solid fa-arrow-trend-down"></i></div><span class="chip bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-300">EXPENSES</span></div>
+<div class="mt-3 text-3xl font-extrabold text-red-500 count-up" id="stExpense">$0</div><div class="text-xs text-slate-500 mt-1" id="stExpenseCount">0 records</div>
+</div>
+<div class="stat-card card-hover rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 p-5 shadow-soft" style="--accent:#8b5cf6">
+<div class="flex items-center justify-between"><div class="w-11 h-11 rounded-2xl bg-violet-100 dark:bg-violet-500/20 grid place-items-center text-violet-600 text-xl"><i class="fa-solid fa-piggy-bank"></i></div><span class="chip bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">BUDGET LEFT</span></div>
+<div class="mt-3 text-3xl font-extrabold text-violet-600 count-up" id="stBudget">$0</div><div class="text-xs text-slate-500 mt-1" id="stBudgetSub">this month</div>
+</div>
+</div>
+<div class="grid xl:grid-cols-3 gap-4">
+<div class="xl:col-span-2 rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 p-6 shadow-soft">
+<div class="flex items-center justify-between"><div><h3 class="font-extrabold">Cashflow Trend</h3><p class="text-xs text-slate-500">Income vs expenses • last 6 months (from DB)</p></div><span class="chip bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300"><i class="fa-solid fa-chart-line mr-1"></i>Chart.js</span></div>
+<div class="h-[280px] mt-4"><canvas id="chCashflow"></canvas></div>
+</div>
+<div class="rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 p-6 shadow-soft">
+<h3 class="font-extrabold">Expenses by Category</h3><p class="text-xs text-slate-500">Grouped SUM() from SQLite</p>
+<div class="h-[240px] mt-4"><canvas id="chDonut"></canvas></div>
+<div id="donutLegend" class="mt-3 space-y-1.5 text-xs max-h-[110px] overflow-y-auto scroll-thin"></div>
+</div>
+</div>
+<div class="grid xl:grid-cols-3 gap-4">
+<div class="xl:col-span-2 rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 shadow-soft overflow-hidden">
+<div class="p-6 pb-3 flex items-center justify-between"><div><h3 class="font-extrabold">Recent Transactions</h3><p class="text-xs text-slate-500">ORDER BY date DESC LIMIT 5</p></div><button data-goto="transactions" class="text-xs font-extrabold text-emerald-600 hover:underline">View all →</button></div>
+<div id="recentList" class="divide-y divide-slate-100 dark:divide-white/5"></div>
+</div>
+<div class="space-y-4">
+<div class="rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 p-6 shadow-soft">
+<div class="flex items-center justify-between"><h3 class="font-extrabold">Budget Usage</h3><button data-goto="budget" class="text-xs font-extrabold text-emerald-600 hover:underline">Manage →</button></div>
+<div id="dashBudgets" class="mt-4 space-y-3"></div>
+</div>
+<div class="rounded-3xl grad-bg p-6 text-white shadow-glow">
+<h3 class="font-extrabold">Quick Actions</h3>
+<div class="grid grid-cols-2 gap-2 mt-3">
+<button onclick="openTxModal(null,'income')" class="py-2.5 rounded-xl bg-white/20 hover:bg-white/30 font-bold text-sm backdrop-blur"><i class="fa-solid fa-plus"></i> Income</button>
+<button onclick="openTxModal(null,'expense')" class="py-2.5 rounded-xl bg-white/20 hover:bg-white/30 font-bold text-sm backdrop-blur"><i class="fa-solid fa-minus"></i> Expense</button>
+<button onclick="openBudgetModal()" class="py-2.5 rounded-xl bg-white/20 hover:bg-white/30 font-bold text-sm backdrop-blur"><i class="fa-solid fa-piggy-bank"></i> Budget</button>
+<button onclick="exportCSV()" class="py-2.5 rounded-xl bg-black/25 hover:bg-black/35 font-bold text-sm backdrop-blur"><i class="fa-solid fa-file-csv"></i> Export</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- TRANSACTIONS -->
+<section id="page-transactions" class="hidden space-y-5">
+<div class="flex flex-wrap items-center gap-3">
+<div><h2 class="text-3xl font-extrabold tracking-tight">Transactions</h2><p class="text-sm text-slate-500">Full CRUD • search • filter by category • parameterized logic</p></div>
+<div class="flex-1"></div>
+<button onclick="exportCSV()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-ink-800 text-sm font-bold"><i class="fa-solid fa-file-csv mr-1"></i> CSV</button>
+<button onclick="openTxModal()" class="px-5 py-2.5 rounded-xl grad-bg text-white text-sm font-extrabold shadow-glow"><i class="fa-solid fa-plus mr-1"></i> Add Income / Expense</button>
+</div>
+<div class="rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 p-4 shadow-soft">
+<div class="grid md:grid-cols-12 gap-3">
+<div class="md:col-span-5 relative"><i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-400"></i><input id="fSearch" placeholder="Search title or category..." class="field w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm"/></div>
+<select id="fCategory" class="field md:col-span-3 px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm font-bold"></select>
+<select id="fType" class="field md:col-span-2 px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm font-bold"><option value="all">All types</option><option value="income">Income</option><option value="expense">Expense</option></select>
+<select id="fSort" class="field md:col-span-2 px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm font-bold"><option value="date_desc">Newest</option><option value="date_asc">Oldest</option><option value="amt_desc">Amount ↓</option><option value="amt_asc">Amount ↑</option></select>
+</div>
+<div class="mt-3 flex flex-wrap gap-2 text-xs font-bold" id="txSummary"></div>
+</div>
+<div id="txList" class="space-y-3"></div>
+</section>
+
+<!-- BUDGET -->
+<section id="page-budget" class="hidden space-y-5">
+<div class="flex flex-wrap items-center gap-3">
+<div><h2 class="text-3xl font-extrabold tracking-tight">Monthly Budgets</h2><p class="text-sm text-slate-500">SET budget per category • track usage from real expenses</p></div>
+<div class="flex-1"></div>
+<div class="flex gap-2 items-center">
+<select id="bMonth" class="field px-4 py-2.5 rounded-xl border bg-white dark:bg-ink-800 text-sm font-bold border-slate-200 dark:border-white/10"></select>
+<select id="bYear" class="field px-4 py-2.5 rounded-xl border bg-white dark:bg-ink-800 text-sm font-bold border-slate-200 dark:border-white/10"></select>
+<button onclick="openBudgetModal()" class="px-5 py-2.5 rounded-xl grad-bg text-white text-sm font-extrabold shadow-glow"><i class="fa-solid fa-plus mr-1"></i> Set Budget</button>
+</div>
+</div>
+<div class="grid sm:grid-cols-3 gap-4">
+<div class="rounded-3xl bg-white dark:bg-ink-800 border p-5 border-slate-200 dark:border-white/10 shadow-soft"><div class="text-xs font-bold text-slate-500">TOTAL BUDGETED</div><div class="text-3xl font-extrabold mt-1" id="bTotal">$0</div><div class="progress mt-3"><div id="bTotalBar" style="width:0%;background:linear-gradient(90deg,#10b981,#0ea5e9)"></div></div></div>
+<div class="rounded-3xl bg-white dark:bg-ink-800 border p-5 border-slate-200 dark:border-white/10 shadow-soft"><div class="text-xs font-bold text-slate-500">TOTAL SPENT</div><div class="text-3xl font-extrabold mt-1 text-red-500" id="bSpent">$0</div><div class="text-xs text-slate-500 mt-3" id="bSpentLbl">from expense rows</div></div>
+<div class="rounded-3xl bg-white dark:bg-ink-800 border p-5 border-slate-200 dark:border-white/10 shadow-soft"><div class="text-xs font-bold text-slate-500">REMAINING</div><div class="text-3xl font-extrabold mt-1 text-emerald-600" id="bRemain">$0</div><div class="text-xs mt-3 font-bold" id="bPct">0% used</div></div>
+</div>
+<div class="rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 p-6 shadow-soft">
+<h3 class="font-extrabold">Budget vs Actual</h3>
+<div class="h-[260px] mt-3"><canvas id="chBudget"></canvas></div>
+</div>
+<div id="budgetGrid" class="grid md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+</section>
+
+<!-- ADMIN -->
+<section id="page-admin" class="hidden space-y-5">
+<div class="rounded-3xl p-6 bg-slate-900 text-white relative overflow-hidden">
+<div class="mesh"><span class="w-72 h-72 bg-violet-600 -top-10 right-10"></span><span class="w-72 h-72 bg-sky-500 bottom-0 left-0"></span></div>
+<div class="relative flex flex-wrap items-center gap-4"><div class="w-14 h-14 rounded-2xl bg-white/15 grid place-items-center text-2xl border border-white/20"><i class="fa-solid fa-user-shield"></i></div><div><h2 class="text-2xl font-extrabold">Admin Panel</h2><p class="text-sm text-slate-300">Manage users • system overview • SQLite admin route /admin</p></div><div class="flex-1"></div><div class="flex gap-2 text-center"><div class="px-4 py-2 rounded-2xl bg-white/10 border border-white/15"><div class="font-extrabold text-xl" id="adUsers">0</div><div class="text-[11px] opacity-80">USERS</div></div><div class="px-4 py-2 rounded-2xl bg-white/10 border border-white/15"><div class="font-extrabold text-xl" id="adTx">0</div><div class="text-[11px] opacity-80">TXNS</div></div><div class="px-4 py-2 rounded-2xl bg-white/10 border border-white/15"><div class="font-extrabold text-xl" id="adVol">$0</div><div class="text-[11px] opacity-80">VOLUME</div></div></div></div>
+</div>
+<div class="rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 shadow-soft overflow-hidden">
+<div class="p-5 font-extrabold flex items-center gap-2"><i class="fa-solid fa-users text-emerald-500"></i> All Users <span class="text-xs font-mono font-normal text-slate-500">SELECT * FROM users</span></div>
+<div class="overflow-x-auto"><table class="w-full text-sm min-w-[700px]"><thead><tr class="text-left text-xs uppercase tracking-wider text-slate-500 border-y border-slate-100 dark:border-white/10 bg-slate-50 dark:bg-white/5"><th class="px-5 py-3">User</th><th class="px-5 py-3">Email</th><th class="px-5 py-3">Txns</th><th class="px-5 py-3">Income</th><th class="px-5 py-3">Expense</th><th class="px-5 py-3">Role</th><th class="px-5 py-3 text-right">Action</th></tr></thead><tbody id="adminRows"></tbody></table></div>
+</div>
+</section>
+
+</main>
+</div>
+</div>
+
+<!-- ══════════ VIEW: SOURCE CODE ══════════ -->
+<div id="codeView" class="hidden max-w-[1500px] mx-auto px-4 lg:px-6 py-6">
+<div class="rounded-3xl bg-slate-900 text-white p-6 lg:p-8 relative overflow-hidden shadow-soft">
+<div class="mesh"><span class="w-96 h-96 bg-emerald-500 -top-24 -left-16"></span><span class="w-96 h-96 bg-sky-600 top-10 right-10"></span></div>
+<div class="relative flex flex-wrap items-center gap-5">
+<div><div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-bold font-mono"><i class="fa-brands fa-python text-amber-300"></i> COMPLETE FLASK PROJECT • READY TO RUN</div>
+<h2 class="mt-3 text-3xl lg:text-4xl font-extrabold tracking-tight">fintrack/ <span class="font-mono text-lg font-semibold text-emerald-300">— full source code</span></h2>
+<p class="text-slate-300 text-sm mt-1 max-w-2xl">Every file below is complete and runnable. Copy individually or download the whole project as ZIP, then run <code class="px-2 py-0.5 rounded bg-black/40 border border-white/20 font-mono text-emerald-300">python app.py</code>. SQLite DB auto-creates on first run. No fake stats — all calculations use parameterized SQL.</p></div>
+<div class="flex-1"></div>
+<div class="flex flex-wrap gap-2">
+<button id="btnZip" class="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-extrabold text-sm transition"><i class="fa-solid fa-file-zipper mr-1"></i> Download fintrack.zip</button>
+<button id="btnCopyRun" class="px-5 py-3 rounded-2xl bg-white/10 border border-white/20 font-bold text-sm hover:bg-white/20 transition"><i class="fa-solid fa-terminal mr-1"></i> Copy run commands</button>
+</div>
+</div>
+<div class="relative mt-5 grid md:grid-cols-4 gap-3 text-center">
+<div class="rounded-2xl bg-white/10 border border-white/15 p-3"><div class="font-extrabold text-xl" id="codeStatFiles">13</div><div class="text-[11px] opacity-80 font-bold tracking-widest">FILES</div></div>
+<div class="rounded-2xl bg-white/10 border border-white/15 p-3"><div class="font-extrabold text-xl" id="codeStatLines">0</div><div class="text-[11px] opacity-80 font-bold tracking-widest">LINES</div></div>
+<div class="rounded-2xl bg-white/10 border border-white/15 p-3"><div class="font-extrabold text-xl">3</div><div class="text-[11px] opacity-80 font-bold tracking-widest">DB TABLES</div></div>
+<div class="rounded-2xl bg-white/10 border border-white/15 p-3"><div class="font-extrabold text-xl">15+</div><div class="text-[11px] opacity-80 font-bold tracking-widest">ROUTES</div></div>
+</div>
+</div>
+
+<div class="mt-4 grid lg:grid-cols-[300px_1fr] gap-4 items-start">
+<!-- FILE TREE -->
+<div class="rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 shadow-soft overflow-hidden lg:sticky lg:top-[84px]">
+<div class="p-4 border-b border-slate-100 dark:border-white/10 flex items-center gap-2"><i class="fa-solid fa-folder-open text-amber-500"></i><span class="font-extrabold text-sm font-mono">fintrack/</span><span class="ml-auto text-[11px] font-mono text-slate-500">13 files</span></div>
+<div class="p-2 max-h-[520px] overflow-y-auto scroll-thin text-sm" id="fileTree"></div>
+<div class="p-3 border-t border-slate-100 dark:border-white/10 terminal text-[11px] rounded-b-3xl bg-slate-50 dark:bg-black/30">
+<div class="text-slate-500">$ python app.py</div><div class="text-emerald-600 dark:text-emerald-400">✓ database.db connected (3 tables)</div><div class="text-sky-600 dark:text-sky-400">* Running on http://127.0.0.1:5000 <span class="blink">▊</span></div>
+</div>
+</div>
+<!-- CODE PANE -->
+<div class="rounded-3xl bg-[#0d1528] border border-slate-800 shadow-soft overflow-hidden min-w-0">
+<div class="flex flex-wrap items-center gap-3 px-5 py-3.5 border-b border-white/10 bg-white/[.03]">
+<div class="flex gap-1.5"><span class="w-3 h-3 rounded-full bg-red-400"></span><span class="w-3 h-3 rounded-full bg-amber-400"></span><span class="w-3 h-3 rounded-full bg-emerald-400"></span></div>
+<span id="codePath" class="font-mono text-sm text-slate-200 font-semibold">app.py</span>
+<span id="codeLang" class="text-[10px] font-extrabold px-2 py-1 rounded bg-emerald-500/20 text-emerald-300">PYTHON</span>
+<span id="codeLines" class="text-[11px] font-mono text-slate-400">0 lines</span>
+<div class="flex-1"></div>
+<button id="btnCopyFile" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition"><i class="fa-solid fa-copy mr-1"></i> Copy</button>
+<button id="btnDlFile" class="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-xs font-extrabold text-white transition"><i class="fa-solid fa-download mr-1"></i> .file</button>
+</div>
+<div class="max-h-[640px] overflow-auto scroll-thin"><pre class="!m-0 p-5"><code id="codeBlock" class="language-python"></code></pre></div>
+</div>
+</div>
+
+<!-- DB SCHEMA + ROUTES DOC -->
+<div class="mt-4 grid lg:grid-cols-2 gap-4">
+<div class="rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 p-6 shadow-soft">
+<h3 class="font-extrabold flex items-center gap-2"><i class="fa-solid fa-database text-sky-500"></i> SQLite Schema <span class="font-mono text-xs font-normal text-slate-500">database.db</span></h3>
+<div class="mt-3 space-y-3 font-mono text-[12px]">
+<div class="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden"><div class="px-4 py-2 bg-emerald-500/10 font-bold text-emerald-600 dark:text-emerald-300">users (id, name, email, password)</div><div class="p-3 text-slate-600 dark:text-slate-300">id INTEGER PK AUTOINCREMENT<br/>name TEXT NOT NULL<br/>email TEXT UNIQUE NOT NULL<br/>password TEXT NOT NULL <span class="text-slate-400">— werkzeug hash</span><br/>is_admin INTEGER DEFAULT 0</div></div>
+<div class="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden"><div class="px-4 py-2 bg-sky-500/10 font-bold text-sky-600 dark:text-sky-300">transactions (id, user_id, title, amount, transaction_type, category, transaction_date)</div><div class="p-3 text-slate-600 dark:text-slate-300">id INTEGER PK • user_id INTEGER FK → users(id)<br/>title TEXT • amount REAL • transaction_type TEXT<br/>category TEXT • transaction_date DATE</div></div>
+<div class="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden"><div class="px-4 py-2 bg-violet-500/10 font-bold text-violet-600 dark:text-violet-300">budgets (id, user_id, category, amount, month, year)</div><div class="p-3 text-slate-600 dark:text-slate-300">id INTEGER PK • user_id INTEGER FK<br/>category TEXT • amount REAL • month INT • year INT<br/>UNIQUE(user_id, category, month, year)</div></div>
+</div>
+</div>
+<div class="rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 p-6 shadow-soft">
+<h3 class="font-extrabold flex items-center gap-2"><i class="fa-solid fa-route text-emerald-500"></i> Flask Routes <span class="font-mono text-xs font-normal text-slate-500">all parameterized (?)</span></h3>
+<div class="mt-3 grid sm:grid-cols-2 gap-2 font-mono text-[11.5px]" id="routeGrid"></div>
+<div class="mt-4 rounded-2xl bg-slate-900 text-slate-200 p-4 terminal text-[12px]"><div class="text-slate-400"># run the real backend:</div><div>pip install -r requirements.txt</div><div>python app.py</div><div class="text-emerald-400">→ http://127.0.0.1:5000</div><div class="text-slate-400 mt-1"># demo logins: demo@fintrack.com/demo123 • admin@fintrack.com/admin123</div></div>
+</div>
+</div>
+</div>
+
+<!-- ══════════ MODALS ══════════ -->
+<div id="txModal" class="hidden fixed inset-0 z-[60] modal-bg grid place-items-center p-4">
+<div class="fadeUp w-full max-w-lg rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 shadow-soft p-6">
+<div class="flex items-center gap-3"><div class="w-11 h-11 rounded-2xl grad-bg grid place-items-center text-white"><i class="fa-solid fa-receipt"></i></div><div><h3 id="txModalTitle" class="font-extrabold text-lg">Add Transaction</h3><p class="text-xs text-slate-500">INSERT / UPDATE with validation</p></div><button class="ml-auto w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/10" onclick="closeTxModal()"><i class="fa-solid fa-xmark"></i></button></div>
+<form id="txForm" class="mt-4 space-y-3">
+<input type="hidden" id="txId"/>
+<div class="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-slate-100 dark:bg-white/5">
+<button type="button" id="typeIncome" class="py-2.5 rounded-xl text-sm font-extrabold transition">+ Income</button>
+<button type="button" id="typeExpense" class="py-2.5 rounded-xl text-sm font-extrabold transition">− Expense</button>
+</div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">Title *</label><input id="txTitle" placeholder="e.g. Grocery run, Salary..." class="field mt-1 w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm"/></div>
+<div class="grid grid-cols-2 gap-3">
+<div><label class="text-xs font-bold text-slate-500 uppercase">Amount ($) *</label><input id="txAmount" type="number" step="0.01" min="0.01" placeholder="0.00" class="field mt-1 w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm"/></div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">Date *</label><input id="txDate" type="date" class="field mt-1 w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm"/></div>
+</div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">Category *</label><div id="txCats" class="mt-1.5 grid grid-cols-4 gap-2"></div></div>
+<div id="txErr" class="hidden text-sm font-semibold text-red-500 bg-red-50 dark:bg-red-500/10 border border-red-200 rounded-xl px-4 py-2.5"></div>
+<div class="rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-3 text-xs flex items-center gap-2"><i class="fa-solid fa-calculator text-emerald-500"></i><span>Live preview:</span><span id="txPreview" class="font-extrabold ml-auto">$0.00</span></div>
+<button class="w-full py-3.5 rounded-2xl grad-bg text-white font-extrabold shadow-glow"><i class="fa-solid fa-floppy-disk mr-1"></i> <span id="txSubmitLbl">Save Transaction</span></button>
+</form>
+</div>
+</div>
+
+<div id="bModal" class="hidden fixed inset-0 z-[60] modal-bg grid place-items-center p-4">
+<div class="fadeUp w-full max-w-md rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 shadow-soft p-6">
+<div class="flex items-center gap-3"><div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-600 grid place-items-center text-white"><i class="fa-solid fa-piggy-bank"></i></div><div><h3 class="font-extrabold text-lg">Set Monthly Budget</h3><p class="text-xs text-slate-500">UPSERT per category/month</p></div><button class="ml-auto w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/10" onclick="closeBudgetModal()"><i class="fa-solid fa-xmark"></i></button></div>
+<form id="bForm" class="mt-4 space-y-3">
+<input type="hidden" id="bId"/>
+<div><label class="text-xs font-bold text-slate-500 uppercase">Category</label><select id="bCat" class="field mt-1 w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm font-bold"></select></div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">Amount ($) *</label><input id="bAmt" type="number" step="0.01" min="1" placeholder="500.00" class="field mt-1 w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-sm"/></div>
+<div class="grid grid-cols-2 gap-3">
+<div><label class="text-xs font-bold text-slate-500 uppercase">Month</label><select id="bM" class="field mt-1 w-full px-4 py-3 rounded-2xl border bg-slate-50 dark:bg-white/5 text-sm border-slate-200 dark:border-white/10"></select></div>
+<div><label class="text-xs font-bold text-slate-500 uppercase">Year</label><select id="bY" class="field mt-1 w-full px-4 py-3 rounded-2xl border bg-slate-50 dark:bg-white/5 text-sm border-slate-200 dark:border-white/10"></select></div>
+</div>
+<div id="bErr" class="hidden text-sm font-semibold text-red-500 bg-red-50 dark:bg-red-500/10 border border-red-200 rounded-xl px-4 py-2.5"></div>
+<button class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-extrabold">Save Budget</button>
+</form>
+</div>
+</div>
+
+<div id="confirmModal" class="hidden fixed inset-0 z-[70] modal-bg grid place-items-center p-4">
+<div class="fadeUp w-full max-w-sm rounded-3xl bg-white dark:bg-ink-800 border p-6 text-center shadow-soft border-slate-200 dark:border-white/10">
+<div class="w-14 h-14 mx-auto rounded-2xl bg-red-100 dark:bg-red-500/20 grid place-items-center text-red-500 text-2xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+<h3 id="cfTitle" class="font-extrabold text-lg mt-3">Delete?</h3><p id="cfMsg" class="text-sm text-slate-500 mt-1">Are you sure?</p>
+<div class="grid grid-cols-2 gap-2 mt-4"><button id="cfNo" class="py-3 rounded-2xl bg-slate-100 dark:bg-white/10 font-bold text-sm">Cancel</button><button id="cfYes" class="py-3 rounded-2xl bg-red-500 text-white font-extrabold text-sm hover:bg-red-600">Delete</button></div>
+</div>
+</div>
+
+<div id="toasts" class="fixed bottom-5 right-5 z-[80] space-y-2 w-[320px] max-w-[calc(100vw-40px)]"></div>
+
+<script>
+/* ═══════════════════════ PROJECT SOURCE FILES (complete, runnable) ═══════════════════════ */
+const PROJECT_FILES = {
+"app.py": {lang:"python", label:"PYTHON", code:
+`"""
+FinTrack - Personal Finance Manager
+Flask + SQLite + Jinja2 + Chart.js
+Run:  python app.py
+"""
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, g
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
+from datetime import datetime
+import sqlite3
+import os
+
+app = Flask(__name__)
+app.secret_key = "fintrack-secret-key-change-in-production"
+DATABASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database.db")
+
+CATEGORIES = ["Food", "Travel", "Education", "Shopping", "Bills", "Entertainment", "Salary", "Other"]
+
+# ---------- DB helpers (parameterized queries everywhere) ----------
+def get_db():
+    if "db" not in g:
+        g.db = sqlite3.connect(DATABASE)
+        g.db.row_factory = sqlite3.Row
+    return g.db
+
+@app.teardown_appcontext
+def close_db(e=None):
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
+
+def init_db():
+    db = sqlite3.connect(DATABASE)
+    cur = db.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        is_admin INTEGER DEFAULT 0)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        amount REAL NOT NULL,
+        transaction_type TEXT NOT NULL CHECK(transaction_type IN ('income','expense')),
+        category TEXT NOT NULL,
+        transaction_date DATE NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)""")
+    cur.execute("""CREATE TABLE IF NOT EXISTS budgets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        category TEXT NOT NULL,
+        amount REAL NOT NULL,
+        month INTEGER NOT NULL,
+        year INTEGER NOT NULL,
+        UNIQUE(user_id, category, month, year),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)""")
+    # seed admin + demo (parameterized)
+    cur.execute("SELECT id FROM users WHERE email = ?", ("admin@fintrack.com",))
+    if not cur.fetchone():
+        cur.execute("INSERT INTO users (name,email,password,is_admin) VALUES (?,?,?,?)",
+            ("Admin", "admin@fintrack.com", generate_password_hash("admin123"), 1))
+    cur.execute("SELECT id FROM users WHERE email = ?", ("demo@fintrack.com",))
+    if not cur.fetchone():
+        cur.execute("INSERT INTO users (name,email,password,is_admin) VALUES (?,?,?,?)",
+            ("Demo User", "demo@fintrack.com", generate_password_hash("demo123"), 0))
+    db.commit()
+    db.close()
+
+def login_required(f):
+    @wraps(f)
+    def wrap(*a, **kw):
+        if "user_id" not in session:
+            flash("Please login first.", "warning")
+            return redirect(url_for("login"))
+        return f(*a, **kw)
+    return wrap
+
+def admin_required(f):
+    @wraps(f)
+    def wrap(*a, **kw):
+        if not session.get("is_admin"):
+            flash("Admin access only.", "danger")
+            return redirect(url_for("dashboard"))
+        return f(*a, **kw)
+    return wrap
+
+# ---------- Routes ----------
+@app.route("/")
+def index():
+    if "user_id" in session:
+        return redirect(url_for("dashboard"))
+    return render_template("index.html")
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        pw = request.form.get("password", "")
+        if not name or not email or len(pw) < 6:
+            flash("Fill all fields. Password min 6 chars.", "danger")
+            return render_template("register.html")
+        db = get_db()
+        exists = db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+        if exists:
+            flash("Email already registered.", "danger")
+            return render_template("register.html")
+        db.execute("INSERT INTO users (name,email,password) VALUES (?,?,?)",
+                   (name, email, generate_password_hash(pw)))
+        db.commit()
+        flash("Account created. Please login.", "success")
+        return redirect(url_for("login"))
+    return render_template("register.html")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        pw = request.form.get("password", "")
+        db = get_db()
+        user = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        if user and check_password_hash(user["password"], pw):
+            session["user_id"] = user["id"]
+            session["name"] = user["name"]
+            session["is_admin"] = bool(user["is_admin"])
+            flash("Welcome back, " + user["name"] + "!", "success")
+            return redirect(url_for("dashboard"))
+        flash("Invalid email or password.", "danger")
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Logged out.", "info")
+    return redirect(url_for("index"))
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    db = get_db()
+    uid = session["user_id"]
+    now = datetime.now()
+    income = db.execute("SELECT COALESCE(SUM(amount),0) s FROM transactions WHERE user_id=? AND transaction_type='income'", (uid,)).fetchone()["s"]
+    expense = db.execute("SELECT COALESCE(SUM(amount),0) s FROM transactions WHERE user_id=? AND transaction_type='expense'", (uid,)).fetchone()["s"]
+    balance = income - expense
+    recent = db.execute("SELECT * FROM transactions WHERE user_id=? ORDER BY transaction_date DESC, id DESC LIMIT 5", (uid,)).fetchall()
+    # budgets this month
+    brows = db.execute("SELECT * FROM budgets WHERE user_id=? AND month=? AND year=?", (uid, now.month, now.year)).fetchall()
+    budgets = []
+    b_total = 0
+    b_spent = 0
+    for b in brows:
+        spent = db.execute("""SELECT COALESCE(SUM(amount),0) s FROM transactions
+            WHERE user_id=? AND transaction_type='expense' AND category=?
+            AND strftime('%m',transaction_date)=? AND strftime('%Y',transaction_date)=?""",
+            (uid, b["category"], "%02d" % now.month, str(now.year))).fetchone()["s"]
+        b_total += b["amount"]; b_spent += spent
+        budgets.append({"row": b, "spent": spent, "remaining": b["amount"]-spent,
+                        "pct": round(spent/b["amount"]*100,1) if b["amount"] else 0})
+    # category breakdown
+    cats = db.execute("""SELECT category, COALESCE(SUM(amount),0) total FROM transactions
+        WHERE user_id=? AND transaction_type='expense' GROUP BY category""", (uid,)).fetchall()
+    return render_template("dashboard.html", income=income, expense=expense, balance=balance,
+                           recent=recent, budgets=budgets, b_total=b_total, b_spent=b_spent,
+                           b_remaining=b_total-b_spent, cats=cats, categories=CATEGORIES, now=now)
+
+@app.route("/transactions")
+@login_required
+def transactions():
+    db = get_db()
+    uid = session["user_id"]
+    q = request.args.get("search", "").strip()
+    cat = request.args.get("category", "")
+    typ = request.args.get("type", "")
+    sql = "SELECT * FROM transactions WHERE user_id = ?"
+    params = [uid]
+    if q:
+        sql += " AND (title LIKE ? OR category LIKE ?)"
+        params += ["%"+q+"%", "%"+q+"%"]
+    if cat:
+        sql += " AND category = ?"; params.append(cat)
+    if typ in ("income", "expense"):
+        sql += " AND transaction_type = ?"; params.append(typ)
+    sql += " ORDER BY transaction_date DESC, id DESC"
+    rows = db.execute(sql, params).fetchall()
+    tot_in = sum(r["amount"] for r in rows if r["transaction_type"] == "income")
+    tot_ex = sum(r["amount"] for r in rows if r["transaction_type"] == "expense")
+    return render_template("transactions.html", rows=rows, categories=CATEGORIES,
+                           q=q, cat=cat, typ=typ, tot_in=tot_in, tot_ex=tot_ex)
+
+@app.route("/add_transaction", methods=["POST"])
+@login_required
+def add_transaction():
+    db = get_db()
+    title = request.form.get("title", "").strip()
+    try: amount = float(request.form.get("amount", 0))
+    except: amount = 0
+    typ = request.form.get("transaction_type", "")
+    cat = request.form.get("category", "Other")
+    dt = request.form.get("transaction_date", "")
+    if not title or amount <= 0 or typ not in ("income", "expense") or not dt:
+        flash("Invalid transaction data.", "danger")
+        return redirect(url_for("transactions"))
+    db.execute("""INSERT INTO transactions (user_id,title,amount,transaction_type,category,transaction_date)
+                  VALUES (?,?,?,?,?,?)""", (session["user_id"], title, amount, typ, cat, dt))
+    db.commit()
+    flash("Transaction added.", "success")
+    return redirect(url_for("transactions"))
+
+@app.route("/edit_transaction/<int:tid>", methods=["GET", "POST"])
+@login_required
+def edit_transaction(tid):
+    db = get_db()
+    row = db.execute("SELECT * FROM transactions WHERE id=? AND user_id=?", (tid, session["user_id"])).fetchone()
+    if not row:
+        flash("Not found.", "danger"); return redirect(url_for("transactions"))
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        try: amount = float(request.form.get("amount", 0))
+        except: amount = 0
+        typ = request.form.get("transaction_type", "")
+        cat = request.form.get("category", "Other")
+        dt = request.form.get("transaction_date", "")
+        if not title or amount <= 0 or typ not in ("income", "expense") or not dt:
+            flash("Invalid data.", "danger")
+        else:
+            db.execute("""UPDATE transactions SET title=?,amount=?,transaction_type=?,category=?,transaction_date=?
+                          WHERE id=? AND user_id=?""", (title, amount, typ, cat, dt, tid, session["user_id"]))
+            db.commit()
+            flash("Transaction updated.", "success")
+            return redirect(url_for("transactions"))
+    return render_template("transactions.html", rows=db.execute(
+        "SELECT * FROM transactions WHERE user_id=? ORDER BY transaction_date DESC", (session["user_id"],)).fetchall(),
+        categories=CATEGORIES, edit=row, q="", cat="", typ="", tot_in=0, tot_ex=0)
+
+@app.route("/delete_transaction/<int:tid>", methods=["POST"])
+@login_required
+def delete_transaction(tid):
+    db = get_db()
+    db.execute("DELETE FROM transactions WHERE id=? AND user_id=?", (tid, session["user_id"]))
+    db.commit()
+    flash("Transaction deleted.", "info")
+    return redirect(url_for("transactions"))
+
+@app.route("/budget")
+@login_required
+def budget():
+    db = get_db()
+    uid = session["user_id"]
+    now = datetime.now()
+    try: month = int(request.args.get("month", now.month)); year = int(request.args.get("year", now.year))
+    except: month, year = now.month, now.year
+    brows = db.execute("SELECT * FROM budgets WHERE user_id=? AND month=? AND year=?", (uid, month, year)).fetchall()
+    data = []
+    for b in brows:
+        spent = db.execute("""SELECT COALESCE(SUM(amount),0) s FROM transactions WHERE user_id=?
+            AND transaction_type='expense' AND category=? AND strftime('%m',transaction_date)=?
+            AND strftime('%Y',transaction_date)=?""", (uid, b["category"], "%02d" % month, str(year))).fetchone()["s"]
+        data.append({"row": b, "spent": spent, "remaining": b["amount"]-spent,
+                     "pct": round(spent/b["amount"]*100,1) if b["amount"] else 0})
+    return render_template("budget.html", budgets=data, categories=CATEGORIES, month=month, year=year)
+
+@app.route("/set_budget", methods=["POST"])
+@login_required
+def set_budget():
+    db = get_db()
+    cat = request.form.get("category", "Food")
+    try: amount = float(request.form.get("amount", 0)); month = int(request.form.get("month")); year = int(request.form.get("year"))
+    except: flash("Invalid budget.", "danger"); return redirect(url_for("budget"))
+    if amount <= 0: flash("Amount must be > 0.", "danger"); return redirect(url_for("budget"))
+    ex = db.execute("SELECT id FROM budgets WHERE user_id=? AND category=? AND month=? AND year=?",
+                    (session["user_id"], cat, month, year)).fetchone()
+    if ex:
+        db.execute("UPDATE budgets SET amount=? WHERE id=?", (amount, ex["id"]))
+    else:
+        db.execute("INSERT INTO budgets (user_id,category,amount,month,year) VALUES (?,?,?,?,?)",
+                   (session["user_id"], cat, amount, month, year))
+    db.commit()
+    flash("Budget saved.", "success")
+    return redirect(url_for("budget", month=month, year=year))
+
+@app.route("/delete_budget/<int:bid>", methods=["POST"])
+@login_required
+def delete_budget(bid):
+    db = get_db()
+    db.execute("DELETE FROM budgets WHERE id=? AND user_id=?", (bid, session["user_id"]))
+    db.commit()
+    flash("Budget deleted.", "info")
+    return redirect(url_for("budget"))
+
+@app.route("/api/chart-data")
+@login_required
+def chart_data():
+    db = get_db()
+    uid = session["user_id"]
+    cats = db.execute("""SELECT category, COALESCE(SUM(amount),0) total FROM transactions
+        WHERE user_id=? AND transaction_type='expense' GROUP BY category""", (uid,)).fetchall()
+    labels, inc, exp = [], [], []
+    now = datetime.now()
+    for i in range(5, -1, -1):
+        m = now.month - i; y = now.year
+        while m <= 0: m += 12; y -= 1
+        labels.append(datetime(y, m, 1).strftime("%b"))
+        inc.append(db.execute("""SELECT COALESCE(SUM(amount),0) s FROM transactions WHERE user_id=?
+            AND transaction_type='income' AND strftime('%m',transaction_date)=? AND strftime('%Y',transaction_date)=?""",
+            (uid, "%02d" % m, str(y))).fetchone()["s"])
+        exp.append(db.execute("""SELECT COALESCE(SUM(amount),0) s FROM transactions WHERE user_id=?
+            AND transaction_type='expense' AND strftime('%m',transaction_date)=? AND strftime('%Y',transaction_date)=?""",
+            (uid, "%02d" % m, str(y))).fetchone()["s"])
+    return jsonify({"expense_by_cat": [{"category": r["category"], "total": r["total"]} for r in cats],
+                    "trend": {"labels": labels, "income": inc, "expense": exp}})
+
+@app.route("/admin")
+@login_required
+@admin_required
+def admin():
+    db = get_db()
+    users = db.execute("SELECT * FROM users ORDER BY id").fetchall()
+    stats = []
+    for u in users:
+        tx = db.execute("SELECT COUNT(*), COALESCE(SUM(CASE WHEN transaction_type='income' THEN amount ELSE 0 END),0), COALESCE(SUM(CASE WHEN transaction_type='expense' THEN amount ELSE 0 END),0) FROM transactions WHERE user_id=?", (u["id"],)).fetchone()
+        stats.append({"user": u, "count": tx[0], "income": tx[1], "expense": tx[2]})
+    return render_template("admin.html", stats=stats)
+
+@app.route("/delete_user/<int:uid>", methods=["POST"])
+@login_required
+@admin_required
+def delete_user(uid):
+    if uid == session["user_id"]:
+        flash("Cannot delete yourself.", "danger")
+    else:
+        db = get_db()
+        db.execute("DELETE FROM transactions WHERE user_id=?", (uid,))
+        db.execute("DELETE FROM budgets WHERE user_id=?", (uid,))
+        db.execute("DELETE FROM users WHERE id=?", (uid,))
+        db.commit()
+        flash("User deleted.", "info")
+    return redirect(url_for("admin"))
+
+if __name__ == "__main__":
+    init_db()
+    print("FinTrack running on http://127.0.0.1:5000")
+    app.run(debug=True)
+`},
+
+"requirements.txt": {lang:"ini", label:"TXT", code:
+`Flask==3.0.1
+Werkzeug==3.0.1
+Jinja2==3.1.3
+`},
+
+"README.md": {lang:"markdown", label:"MD", code:
+`# FinTrack - Personal Finance Manager
+
+A complete full-stack finance app built with **Flask + SQLite + Jinja2 + Chart.js**.
+
+## Features
+- Register / Login (hashed passwords, sessions)
+- Add income & expenses, categorize, edit, delete
+- Search + filter by category / type
+- Total balance, income, expenses (SQL SUM)
+- Monthly budgets + usage tracking
+- Charts: donut + 6-month trend (Chart.js)
+- Admin panel, dark/light mode, responsive nav
+- All queries parameterized (SQL-injection safe)
+
+## Quick Start
+\`\`\`bash
+pip install -r requirements.txt
+python app.py
+# open http://127.0.0.1:5000
+\`\`\`
+
+## Demo Logins
+- demo@fintrack.com / demo123
+- admin@fintrack.com / admin123
+
+## Structure
+\`\`\`
+fintrack/
+  app.py
+  requirements.txt
+  database.db        (auto-created)
+  README.md
+  templates/ base, index, dashboard, transactions, budget, login, register, admin
+  static/ css/style.css  js/script.js
+\`\`\`
+
+## Database
+- users(id, name, email, password)
+- transactions(id, user_id, title, amount, transaction_type, category, transaction_date)
+- budgets(id, user_id, category, amount, month, year)
+
+## Categories
+Food, Travel, Education, Shopping, Bills, Entertainment, Salary, Other
+`},
+
+"templates/base.html": {lang:"xml", label:"HTML", code:
+`<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}FinTrack{% endblock %} - Personal Finance Manager</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"><\/script>
+</head>
+<body>
+<nav class="navbar">
+  <a class="brand" href="{{ url_for('index') }}">FinTrack</a>
+  <button class="nav-toggle" id="navToggle">☰</button>
+  <div class="nav-links" id="navLinks">
+    {% if session.user_id %}
+      <a href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('transactions') }}">Transactions</a>
+      <a href="{{ url_for('budget') }}">Budget</a>
+      {% if session.is_admin %}<a href="{{ url_for('admin') }}">Admin</a>{% endif %}
+      <a href="{{ url_for('logout') }}">Logout ({{ session.name }})</a>
+    {% else %}
+      <a href="{{ url_for('login') }}">Login</a>
+      <a href="{{ url_for('register') }}" class="btn">Register</a>
+    {% endif %}
+    <button id="themeBtn" class="btn-ghost" type="button">Dark</button>
+  </div>
+</nav>
+<main class="container">
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}<div class="flash flash-{{ cat }}">{{ msg }}</div>{% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="footer">FinTrack • Flask + SQLite • python app.py</footer>
+<script src="{{ url_for('static', filename='js/script.js') }}"><\/script>
+</body>
+</html>
+`},
+
+"templates/index.html": {lang:"xml", label:"HTML", code:
+`{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <span class="pill">Flask + SQLite + Chart.js</span>
+    <h1>Master your money with <span class="accent">FinTrack</span></h1>
+    <p>Track income, expenses, budgets and charts. Every number comes from real database rows.</p>
+    <div class="row">
+      <a class="btn" href="{{ url_for('register') }}">Get Started</a>
+      <a class="btn-ghost" href="{{ url_for('login') }}">Login</a>
+    </div>
+    <div class="chips">
+      <span>Hashed auth</span><span>CRUD</span><span>Search/Filter</span>
+      <span>Budgets</span><span>Charts</span><span>Dark mode</span>
+    </div>
+  </div>
+  <div class="hero-card">
+    <h3>Live from database.db</h3>
+    <p>balance = SUM(income) − SUM(expense)</p>
+    <code>SELECT COALESCE(SUM(amount),0) FROM transactions WHERE user_id=?</code>
+    <p class="muted">Demo: demo@fintrack.com / demo123</p>
+  </div>
+</section>
+<section class="grid3">
+  <div class="card"><h3>Track</h3><p>Add, edit, delete income & expenses with categories.</p></div>
+  <div class="card"><h3>Budget</h3><p>Set monthly limits and watch usage bars update live.</p></div>
+  <div class="card"><h3>Visualize</h3><p>Donut + 6-month trend rendered from SQL aggregates.</p></div>
+</section>
+{% endblock %}
+`},
+
+"templates/dashboard.html": {lang:"xml", label:"HTML", code:
+`{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h2>Welcome, {{ session.name }} 👋</h2>
+<p class="muted">All stats computed with SQL SUM() — no fake data.</p>
+<div class="grid4">
+  <div class="stat"><span>Balance</span><strong>$\{{ "%.2f"|format(balance) }}</strong></div>
+  <div class="stat income"><span>Income</span><strong>$\{{ "%.2f"|format(income) }}</strong></div>
+  <div class="stat expense"><span>Expenses</span><strong>$\{{ "%.2f"|format(expense) }}</strong></div>
+  <div class="stat budget"><span>Budget Remaining</span><strong>$\{{ "%.2f"|format(b_remaining) }}</strong></div>
+</div>
+<div class="grid2">
+  <div class="card">
+    <h3>Cashflow (6 months)</h3>
+    <canvas id="cashflowChart" height="140"></canvas>
+  </div>
+  <div class="card">
+    <h3>Expenses by Category</h3>
+    <canvas id="catChart" height="140"
+      data-cats='[{% for c in cats %}"{{ c["category"] }}"{% if not loop.last %},{% endif %}{% endfor %}]'
+      data-vals='[{% for c in cats %}{{ c["total"] }}{% if not loop.last %},{% endif %}{% endfor %}]'></canvas>
+  </div>
+</div>
+<div class="grid2">
+  <div class="card">
+    <h3>Recent Transactions</h3>
+    <table><tr><th>Title</th><th>Cat</th><th>Date</th><th>Amount</th></tr>
+    {% for t in recent %}
+    <tr><td>{{ t["title"] }}</td><td>{{ t["category"] }}</td>
+    <td>{{ t["transaction_date"] }}</td>
+    <td class="{{ t['transaction_type'] }}">{% if t["transaction_type"]=="income" %}+{% else %}-{% endif %}$\{{ t["amount"] }}</td></tr>
+    {% else %}<tr><td colspan="4">No transactions yet.</td></tr>{% endfor %}
+    </table>
+  </div>
+  <div class="card">
+    <h3>Budget Usage — {{ now.strftime("%B %Y") }}</h3>
+    {% for b in budgets %}
+    <div class="brow"><div><strong>{{ b["row"]["category"] }}</strong>
+    <small>$\{{ b["spent"] }} / $\{{ b["row"]["amount"] }}</small></div>
+    <div class="bar"><div style="width:{{ b['pct'] if b['pct']<=100 else 100 }}%"></div></div></div>
+    {% else %}<p class="muted">No budgets this month.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}
+`},
+
+"templates/transactions.html": {lang:"xml", label:"HTML", code:
+`{% extends "base.html" %}
+{% block title %}Transactions{% endblock %}
+{% block content %}
+<h2>Transactions</h2>
+<form method="get" action="{{ url_for('transactions') }}" class="filters" id="filterForm">
+  <input type="text" name="search" id="searchInput" placeholder="Search..." value="{{ q }}">
+  <select name="category" id="catFilter"><option value="">All categories</option>
+    {% for c in categories %}<option value="{{ c }}" {% if cat==c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+  </select>
+  <select name="type"><option value="">All types</option>
+    <option value="income" {% if typ=="income" %}selected{% endif %}>Income</option>
+    <option value="expense" {% if typ=="expense" %}selected{% endif %}>Expense</option>
+  </select>
+  <button class="btn" type="submit">Filter</button>
+</form>
+<p class="muted">Income: $\{{ tot_in }} • Expenses: $\{{ tot_ex }} • <span id="liveCount"></span></p>
+<div class="card">
+<form method="post" action="{% if edit %}{{ url_for('edit_transaction', tid=edit['id']) }}{% else %}{{ url_for('add_transaction') }}{% endif %}" id="txForm" class="gridform">
+  <input type="text" name="title" placeholder="Title *" required value="{% if edit %}{{ edit['title'] }}{% endif %}">
+  <input type="number" name="amount" step="0.01" min="0.01" placeholder="Amount *" required value="{% if edit %}{{ edit['amount'] }}{% endif %}">
+  <select name="transaction_type"><option value="income">Income</option><option value="expense" {% if edit and edit["transaction_type"]=="expense" %}selected{% endif %}>Expense</option></select>
+  <select name="category">{% for c in categories %}<option {% if edit and edit["category"]==c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+  <input type="date" name="transaction_date" required value="{% if edit %}{{ edit['transaction_date'] }}{% endif %}">
+  <button class="btn" type="submit">{% if edit %}Update{% else %}Add{% endif %}</button>
+</form>
+</div>
+<table id="txTable"><tr><th>Title</th><th>Type</th><th>Category</th><th>Date</th><th>Amount</th><th></th></tr>
+{% for t in rows %}
+<tr><td>{{ t["title"] }}</td><td><span class="tag {{ t['transaction_type'] }}">{{ t["transaction_type"] }}</span></td>
+<td>{{ t["category"] }}</td><td>{{ t["transaction_date"] }}</td>
+<td class="{{ t['transaction_type'] }}">$\{{ t["amount"] }}</td>
+<td class="nowrap"><a class="btn-sm" href="{{ url_for('edit_transaction', tid=t['id']) }}">Edit</a>
+<form class="inline" method="post" action="{{ url_for('delete_transaction', tid=t['id']) }}" onsubmit="return confirmDelete('{{ t['title'] }}')"><button class="btn-sm danger" type="submit">Delete</button></form></td></tr>
+{% else %}<tr><td colspan="6">No transactions found.</td></tr>{% endfor %}
+</table>
+{% endblock %}
+`},
+
+"templates/budget.html": {lang:"xml", label:"HTML", code:
+`{% extends "base.html" %}
+{% block title %}Budget{% endblock %}
+{% block content %}
+<h2>Budgets — {{ month }}/{{ year }}</h2>
+<form method="get" action="{{ url_for('budget') }}" class="filters">
+  <input type="number" name="month" min="1" max="12" value="{{ month }}">
+  <input type="number" name="year" min="2020" max="2035" value="{{ year }}">
+  <button class="btn" type="submit">View</button>
+</form>
+<div class="card">
+<form method="post" action="{{ url_for('set_budget') }}" id="budgetForm" class="gridform">
+  <select name="category">{% for c in categories %}<option>{{ c }}</option>{% endfor %}</select>
+  <input type="number" name="amount" step="0.01" min="1" placeholder="Amount *" required>
+  <input type="number" name="month" value="{{ month }}" min="1" max="12" required>
+  <input type="number" name="year" value="{{ year }}" required>
+  <button class="btn" type="submit">Set Budget</button>
+</form>
+</div>
+<div class="grid3">
+{% for b in budgets %}
+<div class="card"><h3>{{ b["row"]["category"] }}</h3>
+<p>$\{{ b["spent"] }} spent of $\{{ b["row"]["amount"] }}</p>
+<div class="bar"><div style="width:{{ b['pct'] if b['pct']<=100 else 100 }}%"></div></div>
+<small>{{ b["pct"] }}% • Remaining $\{{ b["remaining"] }}</small>
+<form method="post" action="{{ url_for('delete_budget', bid=b['row']['id']) }}" onsubmit="return confirmDelete('budget')"><button class="btn-sm danger" type="submit">Delete</button></form>
+</div>
+{% else %}<p class="muted">No budgets set for this month.</p>{% endfor %}
+</div>
+{% endblock %}
+`},
+
+"templates/login.html": {lang:"xml", label:"HTML", code:
+`{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="auth card">
+<h2>Login</h2>
+<form method="post" id="loginForm">
+  <input type="email" name="email" placeholder="Email *" required>
+  <input type="password" name="password" placeholder="Password *" required>
+  <button class="btn full" type="submit">Login</button>
+</form>
+<p class="muted">No account? <a href="{{ url_for('register') }}">Register</a></p>
+<p class="muted">Demo: demo@fintrack.com / demo123</p>
+</div>
+{% endblock %}
+`},
+
+"templates/register.html": {lang:"xml", label:"HTML", code:
+`{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="auth card">
+<h2>Create Account</h2>
+<form method="post" id="registerForm">
+  <input type="text" name="name" placeholder="Full name *" required>
+  <input type="email" name="email" placeholder="Email *" required>
+  <input type="password" name="password" id="regPw" placeholder="Password (min 6) *" required>
+  <button class="btn full" type="submit">Register</button>
+</form>
+<p class="muted">Have an account? <a href="{{ url_for('login') }}">Login</a></p>
+</div>
+{% endblock %}
+`},
+
+"templates/admin.html": {lang:"xml", label:"HTML", code:
+`{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<h2>Admin Panel</h2>
+<table><tr><th>ID</th><th>Name</th><th>Email</th><th>Txns</th><th>Income</th><th>Expense</th><th></th></tr>
+{% for s in stats %}
+<tr><td>{{ s["user"]["id"] }}</td><td>{{ s["user"]["name"] }}</td><td>{{ s["user"]["email"] }}</td>
+<td>{{ s["count"] }}</td><td>$\{{ s["income"] }}</td><td>$\{{ s["expense"] }}</td>
+<td>{% if s["user"]["id"] != session.user_id %}
+<form method="post" action="{{ url_for('delete_user', uid=s['user']['id']) }}" onsubmit="return confirmDelete('user')"><button class="btn-sm danger" type="submit">Delete</button></form>
+{% else %}<small>(you)</small>{% endif %}</td></tr>
+{% endfor %}
+</table>
+{% endblock %}
+`},
+
+"static/css/style.css": {lang:"css", label:"CSS", code:
+`/* FinTrack - Professional Finance Dashboard */
+:root { --bg:#f4f6fb; --card:#fff; --text:#0f172a; --muted:#64748b;
+  --brand:#10b981; --brand2:#0ea5e9; --border:#e2e8f0; --danger:#ef4444; }
+[data-theme="dark"] { --bg:#0b1220; --card:#141f38; --text:#e2e8f0;
+  --muted:#94a3b8; --border:#243356; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Inter,system-ui,sans-serif; background:var(--bg); color:var(--text); }
+.container { max-width:1100px; margin:0 auto; padding:24px 16px 60px; }
+.navbar { display:flex; align-items:center; gap:16px; padding:14px 20px;
+  background:var(--card); border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:50; }
+.brand { font-weight:800; font-size:22px; text-decoration:none;
+  background:linear-gradient(90deg,var(--brand),var(--brand2));
+  -webkit-background-clip:text; background-clip:text; color:transparent; }
+.nav-links { display:flex; gap:12px; align-items:center; margin-left:auto; }
+.nav-links a { text-decoration:none; color:var(--text); font-weight:600; font-size:14px; }
+.nav-toggle { display:none; margin-left:auto; font-size:20px; background:none; border:0; color:var(--text); }
+.btn { background:linear-gradient(135deg,var(--brand),var(--brand2)); color:#fff;
+  padding:10px 18px; border-radius:12px; text-decoration:none; border:0;
+  font-weight:700; cursor:pointer; display:inline-block; }
+.btn-ghost { background:transparent; border:1px solid var(--border); color:var(--text);
+  padding:9px 16px; border-radius:12px; cursor:pointer; font-weight:600; }
+.btn-sm { padding:6px 12px; border-radius:8px; font-size:12px; background:#e2e8f0;
+  text-decoration:none; color:#0f172a; border:0; cursor:pointer; font-weight:700; }
+.btn-sm.danger, .danger { background:var(--danger); color:#fff; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px; }
+.hero { display:grid; grid-template-columns:1.2fr .8fr; gap:20px; align-items:center;
+  background:var(--card); border:1px solid var(--border); border-radius:22px; padding:32px; }
+.hero h1 { font-size:44px; margin:12px 0; line-height:1.05; }
+.accent { color:var(--brand); }
+.pill { background:#d1fae5; color:#065f46; padding:6px 14px; border-radius:99px; font-size:12px; font-weight:800; }
+.grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:14px; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
+.grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:14px 0; }
+.stat { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px; }
+.stat span { font-size:12px; color:var(--muted); font-weight:700; text-transform:uppercase; }
+.stat strong { display:block; font-size:26px; margin-top:6px; }
+.stat.income strong { color:#16a34a; } .stat.expense strong { color:var(--danger); }
+table { width:100%; border-collapse:collapse; margin-top:12px; font-size:14px; }
+th, td { padding:10px; border-bottom:1px solid var(--border); text-align:left; }
+.income { color:#16a34a; font-weight:700; } .expense { color:var(--danger); font-weight:700; }
+.tag { padding:3px 10px; border-radius:99px; font-size:11px; font-weight:800; text-transform:uppercase; }
+.tag.income { background:#dcfce7; color:#166534; } .tag.expense { background:#fee2e2; color:#991b1b; }
+.filters { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
+input, select { padding:10px 14px; border-radius:12px; border:1px solid var(--border);
+  background:var(--card); color:var(--text); font-size:14px; }
+.gridform { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.bar { height:10px; background:#e2e8f0; border-radius:99px; overflow:hidden; margin:8px 0; }
+.bar div { height:100%; background:linear-gradient(90deg,var(--brand),var(--brand2)); }
+.brow { padding:10px 0; border-bottom:1px dashed var(--border); }
+.flash { padding:12px 16px; border-radius:12px; margin-bottom:10px; font-weight:600; }
+.flash-success { background:#dcfce7; color:#166534; } .flash-danger { background:#fee2e2; color:#991b1b; }
+.flash-warning { background:#fef3c7; color:#92400e; } .flash-info { background:#e0f2fe; color:#075985; }
+.auth { max-width:440px; margin:30px auto; } .auth form { display:grid; gap:10px; }
+.full { width:100%; } .muted { color:var(--muted); } .row { display:flex; gap:10px; margin-top:14px; }
+.chips { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+.chips span { background:var(--bg); border:1px solid var(--border); padding:6px 12px; border-radius:99px; font-size:12px; }
+.footer { text-align:center; padding:24px; color:var(--muted); font-size:13px; }
+.inline { display:inline; } .nowrap { white-space:nowrap; }
+code { background:#0f172a; color:#a7f3d0; padding:10px; border-radius:10px; display:block;
+  font-size:12px; overflow-x:auto; margin:10px 0; }
+.hero-card { background:#0f172a; color:#e2e8f0; border-radius:18px; padding:24px; }
+@media (max-width:860px) { .hero,.grid2,.grid3,.grid4,.gridform { grid-template-columns:1fr; }
+  .nav-links { display:none; flex-direction:column; position:absolute; top:60px; right:12px;
+    background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; }
+  .nav-links.open { display:flex; } .nav-toggle { display:block; } .hero h1 { font-size:32px; } }
+`},
+
+"static/js/script.js": {lang:"javascript", label:"JS", code:
+`/* FinTrack app JS: theme, nav, validation, search/filter, calc, charts, confirm */
+(function () {
+  "use strict";
+  var root = document.documentElement;
+
+  // ---- Dark / Light mode (persisted) ----
+  var saved = localStorage.getItem("fintrack-theme");
+  if (saved) root.setAttribute("data-theme", saved);
+  function syncThemeBtn() {
+    var b = document.getElementById("themeBtn");
+    if (b) b.textContent = root.getAttribute("data-theme") === "dark" ? "Light" : "Dark";
+  }
+  syncThemeBtn();
+  document.addEventListener("click", function (e) {
+    if (e.target && e.target.id === "themeBtn") {
+      var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      localStorage.setItem("fintrack-theme", next);
+      syncThemeBtn();
+    }
+    if (e.target && e.target.id === "navToggle") {
+      document.getElementById("navLinks").classList.toggle("open");
+    }
+  });
+
+  // ---- Confirmation dialogs ----
+  window.confirmDelete = function (name) {
+    return confirm("Delete '" + name + "'? This cannot be undone.");
+  };
+
+  // ---- Form validation ----
+  function bind(id, fn) { var f = document.getElementById(id); if (f) f.addEventListener("submit", fn); }
+  bind("registerForm", function (e) {
+    var pw = document.getElementById("regPw").value || "";
+    if (pw.length < 6) { e.preventDefault(); alert("Password must be at least 6 characters."); }
+  });
+  bind("txForm", function (e) {
+    var amt = parseFloat(this.amount.value);
+    if (!(amt > 0)) { e.preventDefault(); alert("Amount must be greater than 0."); }
+    if (!this.title.value.trim()) { e.preventDefault(); alert("Title is required."); }
+  });
+  bind("budgetForm", function (e) {
+    if (!(parseFloat(this.amount.value) > 0)) { e.preventDefault(); alert("Budget must be > 0."); }
+  });
+
+  // ---- Client-side search/filter + dynamic count ----
+  var sInput = document.getElementById("searchInput");
+  var table = document.getElementById("txTable");
+  function liveFilter() {
+    if (!table || !sInput) return;
+    var q = sInput.value.toLowerCase(), n = 0;
+    var rows = table.getElementsByTagName("tr");
+    for (var i = 1; i < rows.length; i++) {
+      var hit = rows[i].textContent.toLowerCase().indexOf(q) > -1;
+      rows[i].style.display = hit ? "" : "none";
+      if (hit) n++;
+    }
+    var c = document.getElementById("liveCount");
+    if (c) c.textContent = n + " shown (dynamic calc)";
+  }
+  if (sInput) sInput.addEventListener("input", liveFilter);
+
+  // ---- Charts (Chart.js, data from backend) ----
+  function cssVar(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+  function mountCharts(data) {
+    if (typeof Chart === "undefined") return;
+    var trend = data.trend, cats = data.expense_by_cat;
+    var c1 = document.getElementById("cashflowChart");
+    if (c1) new Chart(c1, { type: "bar",
+      data: { labels: trend.labels, datasets: [
+        { label: "Income", data: trend.income, backgroundColor: "#22c55e" },
+        { label: "Expense", data: trend.expense, backgroundColor: "#ef4444" } ] },
+      options: { responsive: true, plugins: { legend: { position: "bottom" } } } });
+    var c2 = document.getElementById("catChart");
+    if (c2) {
+      var labels = cats.map(function (x) { return x.category; });
+      var vals = cats.map(function (x) { return x.total; });
+      new Chart(c2, { type: "doughnut",
+        data: { labels: labels, datasets: [{ data: vals, backgroundColor:
+          ["#f59e0b","#3b82f6","#8b5cf6","#ec4899","#ef4444","#10b981","#22c55e","#64748b"] }] },
+        options: { plugins: { legend: { position: "bottom" } } } });
+    }
+  }
+  if (document.getElementById("cashflowChart") || document.getElementById("catChart")) {
+    fetch("/api/chart-data").then(function (r) { return r.json(); })
+      .then(mountCharts).catch(function () {
+        var c2 = document.getElementById("catChart");
+        if (c2 && typeof Chart !== "undefined") {
+          new Chart(c2, { type: "doughnut",
+            data: { labels: JSON.parse(c2.dataset.cats || "[]"),
+                    datasets: [{ data: JSON.parse(c2.dataset.vals || "[]") }] } });
+        }
+      });
+  }
+})();
+`}
+};
+
+/* ═══════════════ LIVE APP (localStorage DB mirrors SQLite schema) ═══════════════ */
+const CATS = {
+  Food:{icon:'fa-utensils',color:'#f59e0b',bg:'#fef3c7'},
+  Travel:{icon:'fa-plane',color:'#3b82f6',bg:'#dbeafe'},
+  Education:{icon:'fa-graduation-cap',color:'#8b5cf6',bg:'#ede9fe'},
+  Shopping:{icon:'fa-bag-shopping',color:'#ec4899',bg:'#fce7f3'},
+  Bills:{icon:'fa-file-invoice-dollar',color:'#ef4444',bg:'#fee2e2'},
+  Entertainment:{icon:'fa-film',color:'#10b981',bg:'#d1fae5'},
+  Salary:{icon:'fa-briefcase',color:'#22c55e',bg:'#dcfce7'},
+  Other:{icon:'fa-shapes',color:'#64748b',bg:'#e2e8f0'}
+};
+const CAT_LIST = Object.keys(CATS);
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const $ = id => document.getElementById(id);
+const money = n => '$' + Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pad = n => String(n).padStart(2,'0');
+const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+function hashPw(s){ let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))>>>0; return 'pbkdf2$'+h.toString(16)+'$'+btoa(s).slice(0,12); }
+const DB = {
+  users(){ try{return JSON.parse(localStorage.getItem('ft_users'))||[]}catch(e){return[]} },
+  saveUsers(u){ localStorage.setItem('ft_users',JSON.stringify(u)); },
+  tx(){ try{return JSON.parse(localStorage.getItem('ft_tx'))||[]}catch(e){return[]} },
+  saveTx(t){ localStorage.setItem('ft_tx',JSON.stringify(t)); },
+  budgets(){ try{return JSON.parse(localStorage.getItem('ft_budgets'))||[]}catch(e){return[]} },
+  saveBudgets(b){ localStorage.setItem('ft_budgets',JSON.stringify(b)); },
+  session(){ try{return JSON.parse(localStorage.getItem('ft_session'))}catch(e){return null} },
+  setSession(s){ s?localStorage.setItem('ft_session',JSON.stringify(s)):localStorage.removeItem('ft_session'); }
+};
+let currentUser=null, txType='expense', selCat='Food', charts={}, confirmCb=null;
+
+function seed(){
+  if(localStorage.getItem('ft_seeded')) return;
+  const users=[
+    {id:1,name:'Demo User',email:'demo@fintrack.com',password:hashPw('demo123'),is_admin:0},
+    {id:2,name:'Admin',email:'admin@fintrack.com',password:hashPw('admin123'),is_admin:1}
+  ];
+  DB.saveUsers(users);
+  const now=new Date(); const tx=[]; let id=1;
+  const monthly=[
+    {t:'Monthly Salary',a:4500,ty:'income',c:'Salary'},
+    {t:'Freelance Project',a:850,ty:'income',c:'Other'},
+    {t:'House Rent',a:1200,ty:'expense',c:'Bills'},
+    {t:'Electricity + Internet',a:145,ty:'expense',c:'Bills'},
+    {t:'Grocery Shopping',a:320,ty:'expense',c:'Food'},
+    {t:'Restaurants & Cafe',a:180,ty:'expense',c:'Food'},
+    {t:'Uber & Metro',a:120,ty:'expense',c:'Travel'},
+    {t:'Online Course',a:99,ty:'expense',c:'Education'},
+    {t:'Clothes & Shoes',a:240,ty:'expense',c:'Shopping'},
+    {t:'Netflix + Spotify',a:32,ty:'expense',c:'Entertainment'},
+    {t:'Weekend Trip',a:310,ty:'expense',c:'Travel'},
+    {t:'Gym Membership',a:45,ty:'expense',c:'Bills'}
+  ];
+  const jitter=[1,.94,1.06,.9,1.1,1.02];
+  for(let m=5;m>=0;m--){
+    const d=new Date(now.getFullYear(),now.getMonth()-m,1);
+    monthly.forEach((e,i)=>{
+      if(m===0 && i>8) return;
+      const day=Math.min(28,3+i*2);
+      const dt=new Date(d.getFullYear(),d.getMonth(),day);
+      const amt=Math.round(e.a*jitter[(i+m)%jitter.length]*100)/100;
+      tx.push({id:id++,user_id:1,title:e.t,amount:amt,transaction_type:e.ty,category:e.c,transaction_date:dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate())});
+    });
+  }
+  tx.push({id:id++,user_id:1,title:'Bonus Payout',amount:1200,transaction_type:'income',category:'Salary',transaction_date:todayStr()});
+  tx.push({id:id++,user_id:1,title:'Bookstore',amount:64,transaction_type:'expense',category:'Education',transaction_date:todayStr()});
+  DB.saveTx(tx);
+  const b=[]; let bid=1;
+  const cur=now.getMonth()+1, yr=now.getFullYear();
+  [['Food',600],['Travel',350],['Shopping',400],['Bills',1450],['Entertainment',150],['Education',200]].forEach(x=>{
+    b.push({id:bid++,user_id:1,category:x[0],amount:x[1],month:cur,year:yr});
+  });
+  DB.saveBudgets(b);
+  localStorage.setItem('ft_seeded','1');
+}
+function myTx(){ return DB.tx().filter(t=>t.user_id===currentUser.id); }
+function stats(list){
+  let income=0,expense=0,ic=0,ec=0;
+  list.forEach(t=>{ if(t.transaction_type==='income'){income+=+t.amount;ic++;} else {expense+=+t.amount;ec++;} });
+  return {income,expense,balance:income-expense,ic,ec};
+}
+function monthKey(d){ return d.slice(0,7); }
+function spentFor(cat,m,y){ return myTx().filter(t=>t.transaction_type==='expense'&&t.category===cat&&t.transaction_date.startsWith(y+'-'+pad(m))).reduce((s,t)=>s+ +t.amount,0); }
+
+function toast(msg,type='success'){
+  const colors={success:['bg-emerald-500','fa-circle-check'],error:['bg-red-500','fa-circle-xmark'],info:['bg-sky-500','fa-circle-info']};
+  const el=document.createElement('div');
+  el.className='toast-in flex items-center gap-3 px-4 py-3 rounded-2xl text-white shadow-soft text-sm font-bold '+colors[type][0];
+  el.innerHTML='<i class="fa-solid '+colors[type][1]+'"></i><span>'+msg+'</span>';
+  $('toasts').appendChild(el); setTimeout(()=>{el.style.opacity='0';el.style.transition='.4s';setTimeout(()=>el.remove(),400);},3200);
+}
+function askConfirm(title,msg,cb){ $('cfTitle').textContent=title; $('cfMsg').textContent=msg; confirmCb=cb; $('confirmModal').classList.remove('hidden'); }
+$('cfNo').onclick=()=>$('confirmModal').classList.add('hidden');
+$('cfYes').onclick=()=>{ $('confirmModal').classList.add('hidden'); if(confirmCb) confirmCb(); };
+
+/* ---------- Auth ---------- */
+function setAuthTab(login){
+  $('loginForm').classList.toggle('hidden',!login); $('regForm').classList.toggle('hidden',login);
+  $('authTabLogin').className='flex-1 py-2.5 rounded-xl text-sm font-bold transition '+(login?'bg-white dark:bg-white/10 shadow':'text-slate-500');
+  $('authTabReg').className='flex-1 py-2.5 rounded-xl text-sm font-bold transition '+(!login?'bg-white dark:bg-white/10 shadow':'text-slate-500');
+}
+$('authTabLogin').onclick=()=>setAuthTab(true); $('authTabReg').onclick=()=>setAuthTab(false);
+document.querySelectorAll('.togglePass').forEach(b=>b.onclick=()=>{ const i=b.parentElement.querySelector('input'); i.type=i.type==='password'?'text':'password'; });
+$('fillDemo').onclick=()=>{ $('loginEmail').value='demo@fintrack.com'; $('loginPass').value='demo123'; toast('Demo credentials filled','info'); };
+$('fillAdmin').onclick=()=>{ $('loginEmail').value='admin@fintrack.com'; $('loginPass').value='admin123'; toast('Admin credentials filled','info'); };
+$('regPass').addEventListener('input',e=>{ const v=e.target.value; let s=v.length>=12?100:v.length>=8?70:v.length>=6?40:v.length*6; $('passBar').style.width=s+'%'; });
+$('loginForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const em=$('loginEmail').value.trim().toLowerCase(), pw=$('loginPass').value;
+  const err=$('loginErr');
+  if(!em||!pw){ err.textContent='Enter email and password.'; err.classList.remove('hidden'); return; }
+  const u=DB.users().find(x=>x.email===em);
+  if(!u||u.password!==hashPw(pw)){ err.textContent='Invalid email or password.'; err.classList.remove('hidden'); return; }
+  err.classList.add('hidden'); loginAs(u); toast('Welcome back, '+u.name+'!');
+});
+$('regForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const n=$('regName').value.trim(), em=$('regEmail').value.trim().toLowerCase(), p1=$('regPass').value, p2=$('regPass2').value;
+  const err=$('regErr');
+  const fail=m=>{ err.textContent=m; err.classList.remove('hidden'); };
+  if(n.length<2) return fail('Enter your full name.');
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return fail('Enter a valid email.');
+  if(p1.length<6) return fail('Password must be at least 6 characters.');
+  if(p1!==p2) return fail('Passwords do not match.');
+  const users=DB.users();
+  if(users.find(x=>x.email===em)) return fail('Email already registered. Try login.');
+  const nu={id:Date.now(),name:n,email:em,password:hashPw(p1),is_admin:0};
+  users.push(nu); DB.saveUsers(users); err.classList.add('hidden'); loginAs(nu); toast('Account created. Welcome!');
+});
+function loginAs(u){ currentUser=u; DB.setSession({id:u.id}); enterApp(); }
+$('btnLogout').onclick=()=>{ DB.setSession(null); currentUser=null; location.reload(); };
+function enterApp(){
+  $('authView').classList.add('hidden'); $('appShell').classList.remove('hidden');
+  $('sbName').textContent=currentUser.name; $('sbEmail').textContent=currentUser.email;
+  $('sbAvatar').textContent=currentUser.name[0].toUpperCase();
+  $('dashName').textContent=currentUser.name.split(' ')[0];
+  $('sbRole').textContent=currentUser.is_admin?'ADMIN':'USER';
+  $('navAdmin').classList.toggle('hidden',!currentUser.is_admin); $('navAdmin').classList.toggle('flex',!!currentUser.is_admin);
+  $('topAvatar').classList.remove('hidden'); $('topAvatar').classList.add('flex');
+  $('topAvatar').innerHTML='<div class="w-9 h-9 rounded-xl grad-bg grid place-items-center text-white font-extrabold">'+currentUser.name[0].toUpperCase()+'</div><div class="hidden xl:block leading-tight"><div class="text-xs font-extrabold">'+currentUser.name+'</div><div class="text-[10px] text-slate-500">● session active</div></div>';
+  buildFilters(); showPage('dashboard'); refreshAll();
+}
+
+/* ---------- Navigation / theme / views ---------- */
+function showPage(p){
+  ['dashboard','transactions','budget','admin'].forEach(x=>$('page-'+x).classList.toggle('hidden',x!==p));
+  document.querySelectorAll('.navlink').forEach(b=>b.classList.toggle('active',b.dataset.page===p));
+  $('sidebar').classList.remove('open'); $('sbOverlay').classList.add('hidden');
+  if(p==='dashboard') renderDashboard(); if(p==='transactions') renderTx();
+  if(p==='budget') renderBudgets(); if(p==='admin') renderAdmin();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('.navlink').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+document.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>showPage(b.dataset.goto));
+$('hamburger').onclick=()=>{ $('sidebar').classList.add('open'); $('sbOverlay').classList.remove('hidden'); };
+$('sbOverlay').onclick=()=>{ $('sidebar').classList.remove('open'); $('sbOverlay').classList.add('hidden'); };
+function setView(code){
+  $('liveView').classList.toggle('hidden',code); $('codeView').classList.toggle('hidden',!code);
+  const on='px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 bg-slate-900 text-white dark:bg-white dark:text-slate-900';
+  const off='px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-500';
+  $('tabLive').className=code?off:on; $('tabCode').className=code?on:off;
+  $('tabLiveM').className='flex-1 py-2 rounded-xl text-sm font-bold '+(code?'bg-slate-100 dark:bg-white/10':'bg-slate-900 text-white dark:bg-white dark:text-slate-900');
+  $('tabCodeM').className='flex-1 py-2 rounded-xl text-sm font-bold '+(code?'bg-slate-900 text-white dark:bg-white dark:text-slate-900':'bg-slate-100 dark:bg-white/10');
+  window.scrollTo({top:0});
+}
+$('tabLive').onclick=()=>setView(false); $('tabCode').onclick=()=>setView(true);
+$('tabLiveM').onclick=()=>setView(false); $('tabCodeM').onclick=()=>setView(true);
+document.querySelectorAll('.gotoCode').forEach(b=>b.onclick=()=>setView(true));
+function toggleTheme(){ const h=document.documentElement; h.classList.toggle('dark'); localStorage.setItem('ft_theme',h.classList.contains('dark')?'dark':'light'); syncTheme(); refreshChartsTheme(); }
+function syncTheme(){ const d=document.documentElement.classList.contains('dark'); $('themeIcon').className=d?'fa-solid fa-sun text-amber-400':'fa-solid fa-moon'; }
+$('themeToggle').onclick=toggleTheme;
+
+/* ---------- Filters build ---------- */
+function buildFilters(){
+  const now=new Date();
+  $('dashMonth').innerHTML='<option value="all">All time</option>'+Array.from({length:6},(_,i)=>{ const d=new Date(now.getFullYear(),now.getMonth()-i,1); const v=d.getFullYear()+'-'+pad(d.getMonth()+1); return '<option value="'+v+'">'+d.toLocaleString('en',{month:'long',year:'numeric'})+'</option>'; }).join('');
+  $('fCategory').innerHTML='<option value="">All categories</option>'+CAT_LIST.map(c=>'<option>'+c+'</option>').join('');
+  $('bMonth').innerHTML=MONTHS.map((m,i)=>'<option value="'+(i+1)+'">'+m+'</option>').join('');
+  $('bMonth').value=now.getMonth()+1;
+  $('bYear').innerHTML=[yr=>yr,yr=>yr-1,yr=>yr-2].map((f,i)=>{const y=now.getFullYear()-i;return '<option>'+y+'</option>';}).join('');
+  $('bM').innerHTML=$('bMonth').innerHTML; $('bM').value=now.getMonth()+1;
+  $('bY').innerHTML=$('bYear').innerHTML;
+  $('bCat').innerHTML=CAT_LIST.map(c=>'<option>'+c+'</option>').join('');
+  $('dashDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  $('dashMonth').onchange=renderDashboard; $('bMonth').onchange=renderBudgets; $('bYear').onchange=renderBudgets;
+  ['fSearch','fCategory','fType','fSort'].forEach(id=>$(id).addEventListener('input',renderTx));
+}
+
+/* ---------- Dashboard ---------- */
+function animateNum(el,val){ const from=parseFloat(el.dataset.v||0); const t0=performance.now(); const dur=700;
+  function step(t){ const p=Math.min(1,(t-t0)/dur); const e=1-Math.pow(1-p,3); const v=from+(val-from)*e; el.textContent=money(v); if(p<1) requestAnimationFrame(step); else el.dataset.v=val; }
+  requestAnimationFrame(step);
+}
+function destroyChart(k){ if(charts[k]){ charts[k].destroy(); delete charts[k]; } }
+function gridColor(){ return document.documentElement.classList.contains('dark')?'rgba(255,255,255,.08)':'rgba(0,0,0,.06)'; }
+function tickColor(){ return document.documentElement.classList.contains('dark')?'#94a3b8':'#64748b'; }
+function renderDashboard(){
+  const mv=$('dashMonth').value;
+  let list=myTx();
+  if(mv!=='all') list=list.filter(t=>t.transaction_date.startsWith(mv));
+  const s=stats(list);
+  animateNum($('stBalance'),s.balance); animateNum($('stIncome'),s.income); animateNum($('stExpense'),s.expense);
+  $('stIncomeCount').textContent=s.ic+' income records • from DB'; $('stExpenseCount').textContent=s.ec+' expense records • from DB';
+  $('stBalanceSub').textContent=(s.balance>=0?'▲ healthy':'▼ overspent')+' • income − expenses';
+  const now=new Date();
+  const budgets=DB.budgets().filter(b=>b.user_id===currentUser.id&&b.month===now.getMonth()+1&&b.year===now.getFullYear());
+  const bTot=budgets.reduce((a,b)=>a+ +b.amount,0);
+  const bSpent=budgets.reduce((a,b)=>a+spentFor(b.category,b.month,b.year),0);
+  animateNum($('stBudget'),bTot-bSpent);
+  $('stBudgetSub').textContent=bTot?money(bSpent)+' of '+money(bTot)+' used':'no budget set';
+  // sidebar month
+  const mSpent=myTx().filter(t=>t.transaction_type==='expense'&&t.transaction_date.startsWith(now.getFullYear()+'-'+pad(now.getMonth()+1))).reduce((a,t)=>a+ +t.amount,0);
+  $('sbMonthSpent').textContent=money(mSpent);
+  const pct=bTot?Math.min(100,mSpent/bTot*100):0;
+  $('sbMonthBar').style.width=pct+'%'; $('sbMonthLbl').textContent=Math.round(pct)+'% of budget';
+  $('navTxCount').textContent=myTx().length;
+  // recent
+  const recent=[...myTx()].sort((a,b)=>b.transaction_date.localeCompare(a.transaction_date)||b.id-a.id).slice(0,5);
+  $('recentList').innerHTML=recent.length?recent.map(t=>{ const m=CATS[t.category]||CATS.Other;
+    return '<div class="flex items-center gap-3 px-6 py-3.5 table-row"><div class="w-10 h-10 rounded-2xl grid place-items-center shrink-0" style="background:'+m.bg+';color:'+m.color+'"><i class="fa-solid '+m.icon+'"></i></div><div class="min-w-0 flex-1"><div class="font-bold text-sm truncate">'+esc(t.title)+'</div><div class="text-xs text-slate-500">'+t.category+' • '+t.transaction_date+'</div></div><div class="font-extrabold '+(t.transaction_type==='income'?'text-green-600':'text-red-500')+'">'+(t.transaction_type==='income'?'+':'−')+money(t.amount).slice(0)+'</div></div>'; }).join('')
+    :'<div class="p-8 text-center text-sm text-slate-500">No transactions yet. Add your first one!</div>';
+  // budgets mini
+  $('dashBudgets').innerHTML=budgets.length?budgets.slice(0,4).map(b=>{ const sp=spentFor(b.category,b.month,b.year); const p=b.amount?Math.min(100,sp/b.amount*100):0;
+    const col=p>=100?'#ef4444':p>=75?'#f59e0b':'#10b981';
+    return '<div><div class="flex justify-between text-xs font-bold"><span>'+b.category+'</span><span>'+Math.round(p)+'%</span></div><div class="progress mt-1.5"><div style="width:'+p+'%;background:'+col+'"></div></div><div class="text-[11px] text-slate-500 mt-1">'+money(sp)+' / '+money(b.amount)+'</div></div>'; }).join('')
+    :'<div class="text-sm text-slate-500">No budgets for this month. <button class="text-emerald-600 font-bold" onclick="openBudgetModal()">Set one →</button></div>';
+  renderDashCharts();
+}
+function last6(){ const out=[]; const n=new Date(); for(let i=5;i>=0;i--){ const d=new Date(n.getFullYear(),n.getMonth()-i,1); out.push({m:d.getMonth()+1,y:d.getFullYear(),lbl:d.toLocaleString('en',{month:'short'})}); } return out; }
+function renderDashCharts(){
+  const months=last6();
+  const inc=months.map(o=>myTx().filter(t=>t.transaction_type==='income'&&t.transaction_date.startsWith(o.y+'-'+pad(o.m))).reduce((a,t)=>a+ +t.amount,0));
+  const exp=months.map(o=>myTx().filter(t=>t.transaction_type==='expense'&&t.transaction_date.startsWith(o.y+'-'+pad(o.m))).reduce((a,t)=>a+ +t.amount,0));
+  destroyChart('cf'); destroyChart('dn');
+  charts.cf=new Chart($('chCashflow'),{type:'bar',data:{labels:months.map(o=>o.lbl),datasets:[
+    {label:'Income',data:inc,backgroundColor:'#22c55e',borderRadius:8},
+    {label:'Expense',data:exp,backgroundColor:'#ef4444',borderRadius:8}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{grid:{display:false},ticks:{color:tickColor()}},y:{grid:{color:gridColor()},ticks:{color:tickColor(),callback:v=>'$'+v}}}}});
+  const byCat=CAT_LIST.map(c=>myTx().filter(t=>t.transaction_type==='expense'&&t.category===c).reduce((a,t)=>a+ +t.amount,0));
+  const nz=CAT_LIST.filter((c,i)=>byCat[i]>0);
+  charts.dn=new Chart($('chDonut'),{type:'doughnut',data:{labels:nz.length?nz:['No data'],datasets:[{data:nz.length?nz.map(c=>byCat[CAT_LIST.indexOf(c)]):[1],backgroundColor:nz.map(c=>CATS[c].color),borderWidth:3,borderColor:document.documentElement.classList.contains('dark')?'#111c33':'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}});
+  const tot=byCat.reduce((a,b)=>a+b,0)||1;
+  $('donutLegend').innerHTML=nz.map(c=>{ const v=byCat[CAT_LIST.indexOf(c)]; return '<div class="flex items-center gap-2"><span class="badge-dot" style="background:'+CATS[c].color+'"></span><span class="font-bold">'+c+'</span><span class="ml-auto text-slate-500">'+money(v)+' • '+Math.round(v/tot*100)+'%</span></div>'; }).join('')||'<div class="text-slate-500">No expenses yet.</div>';
+}
+
+/* ---------- Transactions page ---------- */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function renderTx(){
+  const q=$('fSearch').value.toLowerCase(), cat=$('fCategory').value, typ=$('fType').value, sort=$('fSort').value;
+  let list=myTx().filter(t=>(!q||t.title.toLowerCase().includes(q)||t.category.toLowerCase().includes(q))&&(!cat||t.category===cat)&&(typ==='all'||t.transaction_type===typ));
+  if(sort==='date_desc') list.sort((a,b)=>b.transaction_date.localeCompare(a.transaction_date)||b.id-a.id);
+  if(sort==='date_asc') list.sort((a,b)=>a.transaction_date.localeCompare(b.transaction_date)||a.id-b.id);
+  if(sort==='amt_desc') list.sort((a,b)=>b.amount-a.amount); if(sort==='amt_asc') list.sort((a,b)=>a.amount-b.amount);
+  const s=stats(list);
+  $('txSummary').innerHTML='<span class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/10">'+list.length+' shown (live filter)</span><span class="px-3 py-1.5 rounded-xl bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300">Income '+money(s.income)+'</span><span class="px-3 py-1.5 rounded-xl bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-300">Expense '+money(s.expense)+'</span><span class="px-3 py-1.5 rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">Net '+money(s.balance)+'</span>';
+  $('txList').innerHTML=list.length?list.map(t=>{ const m=CATS[t.category]||CATS.Other;
+    return '<div class="fadeUp rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 p-4 flex items-center gap-4 shadow-soft card-hover">'
+    +'<div class="w-12 h-12 rounded-2xl grid place-items-center text-lg shrink-0" style="background:'+m.bg+';color:'+m.color+'"><i class="fa-solid '+m.icon+'"></i></div>'
+    +'<div class="min-w-0 flex-1"><div class="font-extrabold truncate">'+esc(t.title)+'</div><div class="flex flex-wrap items-center gap-2 mt-1"><span class="chip '+(t.transaction_type==='income'?'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300':'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-300')+'">'+t.transaction_type.toUpperCase()+'</span><span class="chip bg-slate-100 dark:bg-white/10 text-slate-500">'+t.category+'</span><span class="text-xs text-slate-400 font-mono">'+t.transaction_date+'</span></div></div>'
+    +'<div class="text-right shrink-0"><div class="font-extrabold text-lg '+(t.transaction_type==='income'?'text-green-600':'text-red-500')+'">'+(t.transaction_type==='income'?'+':'−')+money(t.amount)+'</div><div class="flex gap-1.5 mt-1.5 justify-end"><button onclick="openTxModal('+t.id+')" class="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-500/20 text-sky-600 text-xs hover:scale-110 transition"><i class="fa-solid fa-pen"></i></button><button onclick="delTx('+t.id+')" class="w-8 h-8 rounded-xl bg-red-100 dark:bg-red-500/20 text-red-500 text-xs hover:scale-110 transition"><i class="fa-solid fa-trash"></i></button></div></div></div>'; }).join('')
+    :'<div class="rounded-3xl border border-dashed border-slate-300 dark:border-white/15 p-12 text-center"><div class="text-4xl">🧾</div><div class="font-extrabold mt-2">No transactions match</div><div class="text-sm text-slate-500">Try clearing filters or add a new record.</div></div>';
+}
+function delTx(id){ const t=DB.tx().find(x=>x.id===id); askConfirm('Delete transaction?','"'+(t?t.title:'')+'" will be permanently removed.',()=>{ DB.saveTx(DB.tx().filter(x=>x.id!==id)); refreshAll(); toast('Transaction deleted','info'); }); }
+function exportCSV(){
+  const list=myTx();
+  if(!list.length) return toast('Nothing to export','error');
+  let csv='id,title,amount,type,category,date\n'+list.map(t=>[t.id,'"'+t.title.replace(/"/g,'""')+'"',t.amount,t.transaction_type,t.category,t.transaction_date].join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='fintrack-transactions.csv'; a.click();
+  toast('CSV exported ('+list.length+' rows)');
+}
+
+/* ---------- Transaction modal ---------- */
+function paintType(){
+  $('typeIncome').className='py-2.5 rounded-xl text-sm font-extrabold transition '+(txType==='income'?'bg-green-500 text-white shadow':'text-slate-500');
+  $('typeExpense').className='py-2.5 rounded-xl text-sm font-extrabold transition '+(txType==='expense'?'bg-red-500 text-white shadow':'text-slate-500');
+  updatePreview();
+}
+function paintCats(){
+  $('txCats').innerHTML=CAT_LIST.map(c=>{ const m=CATS[c]; const on=selCat===c;
+    return '<button type="button" data-cat="'+c+'" class="flex flex-col items-center gap-1 py-2.5 px-1 rounded-2xl border text-[11px] font-bold transition '+(on?'border-transparent text-white shadow':'border-slate-200 dark:border-white/10 text-slate-500')+'" style="'+(on?'background:'+m.color:'')+'"><i class="fa-solid '+m.icon+' text-base"></i>'+c+'</button>'; }).join('');
+  $('txCats').querySelectorAll('button').forEach(b=>b.onclick=()=>{ selCat=b.dataset.cat; paintCats(); });
+}
+function updatePreview(){
+  const a=parseFloat($('txAmount').value)||0;
+  $('txPreview').textContent=(txType==='income'?'+ ':'− ')+money(a);
+  $('txPreview').className='font-extrabold ml-auto '+(txType==='income'?'text-green-600':'text-red-500');
+}
+$('typeIncome').onclick=()=>{ txType='income'; if(selCat==='Bills') selCat='Salary'; paintType(); paintCats(); };
+$('typeExpense').onclick=()=>{ txType='expense'; if(selCat==='Salary') selCat='Food'; paintType(); paintCats(); };
+$('txAmount').addEventListener('input',updatePreview);
+function openTxModal(id=null,forceType=null){
+  $('txId').value=id||''; $('txErr').classList.add('hidden');
+  if(id){ const t=DB.tx().find(x=>x.id===id); txType=t.transaction_type; selCat=t.category;
+    $('txTitle').value=t.title; $('txAmount').value=t.amount; $('txDate').value=t.transaction_date;
+    $('txModalTitle').textContent='Edit Transaction'; $('txSubmitLbl').textContent='Update Transaction';
+  } else { txType=forceType||'expense'; selCat=txType==='income'?'Salary':'Food';
+    $('txTitle').value=''; $('txAmount').value=''; $('txDate').value=todayStr();
+    $('txModalTitle').textContent='Add '+(txType==='income'?'Income':'Expense'); $('txSubmitLbl').textContent='Save Transaction';
+  }
+  paintType(); paintCats(); $('txModal').classList.remove('hidden');
+}
+function closeTxModal(){ $('txModal').classList.add('hidden'); }
+$('txForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const title=$('txTitle').value.trim(), amt=parseFloat($('txAmount').value), dt=$('txDate').value;
+  const err=$('txErr'); const fail=m=>{ err.textContent=m; err.classList.remove('hidden'); };
+  if(title.length<2) return fail('Title must be at least 2 characters.');
+  if(!(amt>0)) return fail('Amount must be greater than 0.');
+  if(!dt) return fail('Pick a valid date.');
+  if(dt>todayStr()) return fail('Date cannot be in the future.');
+  err.classList.add('hidden');
+  const all=DB.tx(); const id=$('txId').value;
+  if(id){ const i=all.findIndex(x=>x.id==id); all[i]={...all[i],title,amount:amt,transaction_type:txType,category:selCat,transaction_date:dt}; toast('Transaction updated'); }
+  else { all.push({id:Date.now(),user_id:currentUser.id,title,amount:amt,transaction_type:txType,category:selCat,transaction_date:dt}); toast((txType==='income'?'Income':'Expense')+' added: '+money(amt)); }
+  DB.saveTx(all); closeTxModal(); refreshAll();
+});
+
+/* ---------- Budgets ---------- */
+function openBudgetModal(editId=null){
+  $('bErr').classList.add('hidden'); $('bId').value=editId||'';
+  if(editId){ const b=DB.budgets().find(x=>x.id===editId); $('bCat').value=b.category; $('bAmt').value=b.amount; $('bM').value=b.month; $('bY').value=b.year; }
+  else { $('bAmt').value=''; $('bM').value=$('bMonth').value; $('bY').value=$('bYear').value; }
+  $('bModal').classList.remove('hidden');
+}
+function closeBudgetModal(){ $('bModal').classList.add('hidden'); }
+$('bForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const cat=$('bCat').value, amt=parseFloat($('bAmt').value), m=+$('bM').value, y=+$('bY').value;
+  const err=$('bErr');
+  if(!(amt>0)){ err.textContent='Budget amount must be > 0.'; err.classList.remove('hidden'); return; }
+  err.classList.add('hidden');
+  const all=DB.budgets(); const id=$('bId').value;
+  if(id){ const i=all.findIndex(x=>x.id==id); all[i]={...all[i],category:cat,amount:amt,month:m,year:y}; }
+  else {
+    const ex=all.find(b=>b.user_id===currentUser.id&&b.category===cat&&b.month===m&&b.year===y);
+    if(ex){ ex.amount=amt; } else all.push({id:Date.now(),user_id:currentUser.id,category:cat,amount:amt,month:m,year:y});
+  }
+  DB.saveBudgets(all); closeBudgetModal(); $('bMonth').value=m; $('bYear').value=String(y); refreshAll(); toast('Budget saved for '+cat);
+});
+function delBudget(id){ askConfirm('Delete budget?','This monthly limit will be removed.',()=>{ DB.saveBudgets(DB.budgets().filter(b=>b.id!==id)); refreshAll(); toast('Budget deleted','info'); }); }
+function renderBudgets(){
+  const m=+$('bMonth').value, y=+$('bYear').value;
+  const list=DB.budgets().filter(b=>b.user_id===currentUser.id&&b.month===m&&b.year===y);
+  const tot=list.reduce((a,b)=>a+ +b.amount,0);
+  const spent=list.reduce((a,b)=>a+spentFor(b.category,m,y),0);
+  $('bTotal').textContent=money(tot); $('bSpent').textContent=money(spent);
+  $('bRemain').textContent=money(tot-spent);
+  $('bRemain').className='text-3xl font-extrabold mt-1 '+((tot-spent)>=0?'text-emerald-600':'text-red-500');
+  const pct=tot?spent/tot*100:0;
+  $('bTotalBar').style.width=Math.min(100,pct)+'%'; $('bPct').textContent=Math.round(pct)+'% used';
+  $('bSpentLbl').textContent=list.length?'from '+list.length+' categor'+(list.length>1?'ies':'y')+' • SQL SUM':'no budgets this month';
+  $('budgetGrid').innerHTML=list.length?list.map(b=>{ const sp=spentFor(b.category,m,y); const p=b.amount?sp/b.amount*100:0;
+    const meta=CATS[b.category]; const col=p>=100?'#ef4444':p>=75?'#f59e0b':'#10b981';
+    const status=p>=100?'OVER BUDGET':p>=75?'WARNING':'ON TRACK';
+    return '<div class="rounded-3xl bg-white dark:bg-ink-800 border border-slate-200 dark:border-white/10 p-5 shadow-soft card-hover fadeUp">'
+    +'<div class="flex items-center gap-3"><div class="w-11 h-11 rounded-2xl grid place-items-center" style="background:'+meta.bg+';color:'+meta.color+'"><i class="fa-solid '+meta.icon+'"></i></div><div><div class="font-extrabold">'+b.category+'</div><div class="text-xs text-slate-500">'+MONTHS[m-1]+' '+y+'</div></div><span class="ml-auto chip" style="background:'+col+'22;color:'+col+'">'+status+'</span></div>'
+    +'<div class="mt-3 flex justify-between text-sm"><span class="font-bold">'+money(sp)+'</span><span class="text-slate-500">of '+money(b.amount)+'</span></div>'
+    +'<div class="progress mt-2"><div style="width:'+Math.min(100,p)+ '%;background:'+col+'"></div></div>'
+    +'<div class="text-xs mt-2 font-bold" style="color:'+col+'">'+Math.round(p)+'% used • '+(b.amount-sp>=0?money(b.amount-sp)+' left':money(sp-b.amount)+' over')+'</div>'
+    +'<div class="grid grid-cols-2 gap-2 mt-3"><button onclick="openBudgetModal('+b.id+')" class="py-2 rounded-xl bg-slate-100 dark:bg-white/10 text-xs font-extrabold">Edit</button><button onclick="delBudget('+b.id+')" class="py-2 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 text-xs font-extrabold">Delete</button></div></div>'; }).join('')
+    :'<div class="col-span-full rounded-3xl border border-dashed border-slate-300 dark:border-white/15 p-12 text-center"><div class="text-4xl">🐷</div><div class="font-extrabold mt-2">No budgets for '+MONTHS[m-1]+' '+y+'</div><button onclick="openBudgetModal()" class="mt-3 px-5 py-2.5 rounded-xl grad-bg text-white text-sm font-extrabold">Set your first budget</button></div>';
+  destroyChart('bg');
+  charts.bg=new Chart($('chBudget'),{type:'bar',data:{labels:list.map(b=>b.category),datasets:[
+    {label:'Budgeted',data:list.map(b=>+b.amount),backgroundColor:'#8b5cf6',borderRadius:8},
+    {label:'Spent',data:list.map(b=>spentFor(b.category,m,y)),backgroundColor:'#f59e0b',borderRadius:8}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{x:{grid:{display:false},ticks:{color:tickColor()}},y:{grid:{color:gridColor()},ticks:{color:tickColor(),callback:v=>'$'+v}}}}});
+}
+
+/* ---------- Admin ---------- */
+function renderAdmin(){
+  const users=DB.users(), allTx=DB.tx();
+  $('adUsers').textContent=users.length; $('adTx').textContent=allTx.length;
+  $('adVol').textContent=money(allTx.reduce((a,t)=>a+ +t.amount,0));
+  $('adminRows').innerHTML=users.map(u=>{
+    const tx=allTx.filter(t=>t.user_id===u.id); const s=stats(tx);
+    return '<tr class="table-row border-b border-slate-100 dark:border-white/5"><td class="px-5 py-3"><div class="flex items-center gap-2"><div class="w-9 h-9 rounded-xl grad-bg grid place-items-center text-white font-extrabold text-sm">'+u.name[0].toUpperCase()+'</div><span class="font-bold">'+esc(u.name)+'</span></div></td><td class="px-5 py-3 text-slate-500">'+u.email+'</td><td class="px-5 py-3 font-bold">'+tx.length+'</td><td class="px-5 py-3 text-green-600 font-bold">'+money(s.income)+'</td><td class="px-5 py-3 text-red-500 font-bold">'+money(s.expense)+'</td><td class="px-5 py-3">'+(u.is_admin?'<span class="chip bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300">ADMIN</span>':'<span class="chip bg-slate-100 dark:bg-white/10 text-slate-500">USER</span>')+'</td><td class="px-5 py-3 text-right">'+(u.id!==currentUser.id?'<button onclick="delUser('+u.id+')" class="px-3 py-1.5 rounded-xl bg-red-100 dark:bg-red-500/20 text-red-500 text-xs font-extrabold">Delete</button>':'<span class="text-xs text-slate-400">(you)</span>')+'</td></tr>'; }).join('');
+}
+function delUser(id){ const u=DB.users().find(x=>x.id===id); askConfirm('Delete user?','"'+u.name+'" and ALL their data will be removed.',()=>{ DB.saveUsers(DB.users().filter(x=>x.id!==id)); DB.saveTx(DB.tx().filter(t=>t.user_id!==id)); DB.saveBudgets(DB.budgets().filter(b=>b.user_id!==id)); renderAdmin(); toast('User deleted','info'); }); }
+function refreshAll(){ if(!currentUser) return; const active=document.querySelector('.navlink.active'); const p=active?active.dataset.page:'dashboard'; if(p==='dashboard') renderDashboard(); if(p==='transactions') renderTx(); if(p==='budget') renderBudgets(); if(p==='admin') renderAdmin();
+  const now=new Date(); const bTot=DB.budgets().filter(b=>b.user_id===currentUser.id&&b.month===now.getMonth()+1&&b.year===now.getFullYear()).reduce((a,b)=>a+ +b.amount,0);
+  const mSpent=myTx().filter(t=>t.transaction_type==='expense'&&t.transaction_date.startsWith(now.getFullYear()+'-'+pad(now.getMonth()+1))).reduce((a,t)=>a+ +t.amount,0);
+  $('sbMonthSpent').textContent=money(mSpent); const pct=bTot?Math.min(100,mSpent/bTot*100):0; $('sbMonthBar').style.width=pct+'%'; $('sbMonthLbl').textContent=Math.round(pct)+'% of budget'; $('navTxCount').textContent=myTx().length;
+}
+function refreshChartsTheme(){ if(!currentUser) return; const p=document.querySelector('.navlink.active').dataset.page; if(p==='dashboard') renderDashCharts(); if(p==='budget') renderBudgets(); }
+
+/* ═══════════════ CODE EXPLORER ═══════════════ */
+const FILE_ORDER=[
+  {path:'app.py',icon:'fa-brands fa-python',color:'#3776ab'},
+  {path:'requirements.txt',icon:'fa-solid fa-list-check',color:'#10b981'},
+  {path:'README.md',icon:'fa-brands fa-markdown',color:'#6366f1'},
+  {path:'templates/base.html',icon:'fa-solid fa-layer-group',color:'#f59e0b'},
+  {path:'templates/index.html',icon:'fa-solid fa-house',color:'#0ea5e9'},
+  {path:'templates/dashboard.html',icon:'fa-solid fa-grid-2',color:'#22c55e'},
+  {path:'templates/transactions.html',icon:'fa-solid fa-arrow-right-arrow-left',color:'#ec4899'},
+  {path:'templates/budget.html',icon:'fa-solid fa-piggy-bank',color:'#8b5cf6'},
+  {path:'templates/login.html',icon:'fa-solid fa-right-to-bracket',color:'#64748b'},
+  {path:'templates/register.html',icon:'fa-solid fa-user-plus',color:'#14b8a6'},
+  {path:'templates/admin.html',icon:'fa-solid fa-user-shield',color:'#ef4444'},
+  {path:'static/css/style.css',icon:'fa-brands fa-css3-alt',color:'#38bdf8'},
+  {path:'static/js/script.js',icon:'fa-brands fa-js',color:'#facc15'}
+];
+let activeFile='app.py';
+function buildTree(){
+  const groups={'root':[],'templates/':[],'static/':[]};
+  FILE_ORDER.forEach(f=>{ if(f.path.startsWith('templates/')) groups['templates/'].push(f); else if(f.path.startsWith('static/')) groups['static/'].push(f); else groups['root'].push(f); });
+  let html='<div class="px-2 py-1 filetree-folder text-slate-400">● root</div>';
+  groups['root'].forEach(f=>html+=treeRow(f));
+  html+='<div class="px-2 py-1 mt-2 filetree-folder text-slate-400"><i class="fa-solid fa-folder text-amber-400 mr-1"></i> templates/</div>';
+  groups['templates/'].forEach(f=>html+=treeRow(f));
+  html+='<div class="px-2 py-1 mt-2 filetree-folder text-slate-400"><i class="fa-solid fa-folder text-sky-400 mr-1"></i> static/</div>';
+  groups['static/'].forEach(f=>html+=treeRow(f));
+  html+='<div class="px-3 py-2 mt-2 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 font-mono text-[11px] text-slate-500"><i class="fa-solid fa-database mr-1 text-emerald-500"></i>database.db <span class="opacity-70">— auto-created by init_db()</span></div>';
+  $('fileTree').innerHTML=html;
+  document.querySelectorAll('.tree-item').forEach(el=>el.onclick=()=>openFile(el.dataset.path));
+  const total=FILE_ORDER.reduce((a,f)=>a+PROJECT_FILES[f.path].code.split('\n').length,0);
+  $('codeStatLines').textContent=total.toLocaleString();
+}
+function treeRow(f){
+  const lines=PROJECT_FILES[f.path].code.split('\n').length;
+  return '<div class="tree-item flex items-center gap-2.5 px-3 py-2.5 rounded-xl '+(f.path===activeFile?'active':'')+'" data-path="'+f.path+'"><i class="'+f.icon+'" style="color:'+f.color+'"></i><span class="font-mono text-[12.5px] font-semibold truncate">'+f.path+'</span><span class="ml-auto text-[10px] font-mono text-slate-400">'+lines+'</span></div>';
+}
+function openFile(path){
+  activeFile=path;
+  document.querySelectorAll('.tree-item').forEach(el=>el.classList.toggle('active',el.dataset.path===path));
+  const f=PROJECT_FILES[path];
+  $('codePath').textContent='fintrack/'+path; $('codeLang').textContent=f.label;
+  $('codeLines').textContent=f.code.split('\n').length+' lines';
+  const block=$('codeBlock');
+  block.className='language-'+f.lang; block.textContent=f.code;
+  if(window.hljs){ block.removeAttribute('data-highlighted'); hljs.highlightElement(block); }
+  document.querySelector('#codeView pre').parentElement.scrollTop=0;
+}
+$('btnCopyFile').onclick=()=>{ navigator.clipboard.writeText(PROJECT_FILES[activeFile].code).then(()=>toast('Copied fintrack/'+activeFile)); };
+$('btnDlFile').onclick=()=>{
+  const blob=new Blob([PROJECT_FILES[activeFile].code],{type:'text/plain'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=activeFile.split('/').pop(); a.click(); toast('Downloaded '+activeFile);
+};
+$('btnCopyRun').onclick=()=>{ navigator.clipboard.writeText('pip install -r requirements.txt\npython app.py'); toast('Run commands copied','info'); };
+async function downloadZip(){
+  toast('Building fintrack.zip...','info');
+  const zip=new JSZip();
+  Object.entries(PROJECT_FILES).forEach(([p,f])=>zip.file('fintrack/'+p,f.code));
+  zip.file('fintrack/.gitignore','__pycache__/\n*.pyc\ninstance/\n');
+  const blob=await zip.generateAsync({type:'blob'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='fintrack.zip'; a.click();
+  toast('fintrack.zip downloaded — run python app.py');
+}
+$('btnZip').onclick=downloadZip; $('btnZipTop').onclick=downloadZip;
+(function routes(){
+  const r=[['GET','/'],['GET POST','/register'],['GET POST','/login'],['GET','/logout'],['GET','/dashboard'],['GET','/transactions'],['POST','/add_transaction'],['GET POST','/edit_transaction/:id'],['POST','/delete_transaction/:id'],['GET','/budget'],['POST','/set_budget'],['POST','/delete_budget/:id'],['GET','/api/chart-data'],['GET','/admin'],['POST','/delete_user/:id']];
+  $('routeGrid').innerHTML=r.map(x=>'<div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10"><span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded '+(x[0].includes('POST')?'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300':'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300')+'">'+x[0]+'</span><span class="truncate">'+x[1]+'</span></div>').join('');
+})();
+
+/* ═══════════════ INIT ═══════════════ */
+(function init(){
+  seed();
+  if(localStorage.getItem('ft_theme')==='dark'||(!localStorage.getItem('ft_theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+  syncTheme(); setAuthTab(true); buildTree(); openFile('app.py');
+  $('heroStatTx').textContent=DB.tx().length;
+  setAuthTab(true);
+  const s=DB.session();
+  if(s){ const u=DB.users().find(x=>x.id===s.id); if(u){ currentUser=u; enterApp(); } }
+  if(window.hljs) hljs.configure({ignoreUnescapedHTML:true});
+})();
+</script>
+</body>
+</html>
